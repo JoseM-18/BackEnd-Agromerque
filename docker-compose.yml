@@ -7,8 +7,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      DATABASE_HOST: 127.0.0.1
-      POSTGRES_USER: postgres
+      DATABASE_HOST: "127.0.0.1"
+      POSTGRES_USER: agromerque
       POSTGRES_PASSWORD: agromerque
       POSTGRES_DB: agromerque
 
@@ -19,5 +19,22 @@ services:
       PGADMIN_DEFAULT_PASSWORD: "admin"
     ports:
       - "5050:80"
+    depends_on:
+      - postgres
+
+      
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_HOST: "postgres"
+      DATABASE_PORT: 5432
+      DATABASE_NAME: "agromerque"
+      DATABASE_USER: "agromerque"
+      DATABASE_PASSWORD: "agromerque"
     depends_on:
       - postgres
