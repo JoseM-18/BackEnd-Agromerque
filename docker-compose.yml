@@ -6,8 +6,7 @@ services:
     restart: always
     ports:
       - "5432:5432"
-    volumes:
-    - C:\Datos\PostgreSQL:/var/lib/postgresql/data
+    
     environment:
       
       DATABASE_HOST: "127.0.0.1"
