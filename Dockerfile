@@ -12,4 +12,4 @@ RUN npm install -g jsonwebtoken
 
 COPY . .
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
