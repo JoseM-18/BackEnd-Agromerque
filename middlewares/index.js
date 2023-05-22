@@ -20,7 +20,7 @@ const verifyToken = async (req, res, next) => {
 //funcion que verifica si el usuario es administrador 
 const isAdmin = async (req, res, next) => {
    
-    return res.status(403).json({message:"Require Moderator Role!"})
+    return res.status(403).json({message:"Require admin Role!"})
 };
 
 module.exports = { verifyToken, isAdmin };
