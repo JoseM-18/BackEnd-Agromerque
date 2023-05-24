@@ -1,5 +1,8 @@
 const pool = require('../database');
 const jwt = require('jsonwebtoken');
+
+/* PROXIMAMENTE */
+
 const getUser = async (req,res) => {
     const result = await pool.query('SELECT * FROM "User";')
     console.log(result)
