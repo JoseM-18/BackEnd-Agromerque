@@ -2,6 +2,15 @@ const pool = require('../database');
 const jwt = require('jsonwebtoken');
 
 /* PROXIMAMENTE */
+const signup = async (req, res) => {
+
+
+}
+
+const signin = async (req, res) => {
+
+}
+
 
 const getUser = async (req,res) => {
     const result = await pool.query('SELECT * FROM "User";')
@@ -22,7 +31,7 @@ const createUser = async(req,res) => {
     if (!id || !password || !registrationDate) {
       return res.status(400).json({ message: "Please. Send all data" })
     }
-    const result = await pool.query('INSERT INTO "User" ("id","password","registrationDate") VALUES ($1, $2, $3)', [id,password,registrationDate]);
+    const result = await pool.query('INSERT INTO "User" ("id","password","registrationDate","role") VALUES ($1, $2, $3, $4)', [id,password,registrationDate,role]);
     console.log(result)
     res.send("creating a user")
 }
@@ -30,9 +39,10 @@ const createUser = async(req,res) => {
 const updateUser = async(req,res) => {
     const id = req.params.id;
     const {password,registrationDate} = req.body;
-    const result = await pool.query('UPDATE "User" SET "password" = $1, "registrationDate" = $2 WHERE "idUser" = $3', [
+    const result = await pool.query('UPDATE "User" SET "password" = $1, "registrationDate" = $2, "role" = $3 WHERE "idUser" = $4', [
           password,
           registrationDate,
+          role,
           id
       ]);
     console.log(result)

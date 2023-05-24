@@ -38,6 +38,24 @@ const getCustomerById = async (req, res) => {
     }
 }
 
+const updateCustomer = async (req, res) => {
+    try {
+        const { idCustomer } = req.params;
+        const { name, lastName, phone, address } = req.body;
+        if (!idCustomer || !name || !lastName || !phone || !address ) {
+            return res.status(404).json({ message: "Please. Send all data" })
+        }
+
+        const result = await pool.query(
+            'UPDATE "Customer" SET "name" = $1, "lastName" = $2, "phone" = $3, "address" = $4, WHERE "idCustomer" = $5',
+            [name, lastName, phone, address, idCustomer]
+        );
+        console.log(result)
+        res.send("updating a customer")
+    } catch (error) {
+        console.log(error.message)
+    }
+}
 /**
  * Crea un cliente
  * @param {*} req 
@@ -46,7 +64,7 @@ const getCustomerById = async (req, res) => {
  */
 const createCustomer = async (req, res) => {
     
-    const { idCustomer, name, lastName, phone, address, email } = req.body;
+    const { idCustomer, name, lastName, phone, address } = req.body;
     
     try {
 
@@ -55,8 +73,8 @@ const createCustomer = async (req, res) => {
         }
 
         const result = await pool.query(
-            'INSERT INTO "Customer" ("idCustomer", "name", "lastName", "phone", "address", "email") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', 
-            [idCustomer, name, lastName, phone, address, email]
+            'INSERT INTO "Customer" ("idCustomer", "name", "lastName", "phone", "address") VALUES ($1, $2, $3, $4, $5, ) RETURNING *', 
+            [idCustomer, name, lastName, phone, address]
         );
 
         res.json(result.rows[0])
@@ -85,3 +103,4 @@ const deleteCustomer = async (req, res) => {
     res.sendStatus(204);
 }
 
+module.exports = { getAllCustomers, getCustomerById, createCustomer, deleteCustomer, updateCustomer }

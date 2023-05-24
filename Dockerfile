@@ -10,6 +10,10 @@ RUN npm install -g nodemon
 
 RUN npm install -g jsonwebtoken
 
+RUN npm install -g bcryptjs
+
+RUN npm install -g dotenv
+
 COPY . .
 
 CMD ["npm", "run", "dev"]
