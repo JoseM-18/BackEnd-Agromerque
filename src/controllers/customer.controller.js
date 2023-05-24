@@ -38,19 +38,29 @@ const getCustomerById = async (req, res) => {
     }
 }
 
-//En desarrollo hola
+/**
+ * Create a new customer
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const createCustomer = async (req, res) => {
     
     const { idCustomer, name, lastName, phone, address, email } = req.body;
     
     try {
+
         if (!idCustomer || !name || !lastName || !phone || !address || !email) {
-            return res.status(400).json({ message: "Please. Send all data" })
+            return res.status(404).json({ message: "Please. Send all data" })
         }
-        const result = await pool.query('INSERT INTO "Customer" ("idCustomer", "name", "lastName", "phone", "address", "email") VALUES ($1, $2, $3, $4, $5, $6)', [idCustomer, name, lastName, phone, address, email]);
-        console.log(result)
-        res.send("creating a customer")
+
+        const result = await pool.query(
+            'INSERT INTO "Customer" ("idCustomer", "name", "lastName", "phone", "address", "email") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', 
+            [idCustomer, name, lastName, phone, address, email]
+        );
+
+        res.json(result.rows[0])
     } catch (error) {
-        console.log(error.message)
+        res.json({ error: error.message })
     }
 }
