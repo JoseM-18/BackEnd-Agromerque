@@ -38,7 +38,7 @@ const getCustomerById = async (req, res) => {
     }
 }
 
-//En desarrollo incompletop
+//En desarrollo 
 const createCustomer = async (req, res) => {
     
     const { idCustomer, name, lastName, phone, address, email } = req.body;
