@@ -1,5 +1,4 @@
 const pool = require('../database');
-const { createProduct } = require('./product.controller');
 
 /**
  * 
@@ -39,4 +38,19 @@ const getCustomerById = async (req, res) => {
     }
 }
 
-
+//En desarrollo
+const createCustomer = async (req, res) => {
+    
+    const { idCustomer, name, lastName, phone, address, email } = req.body;
+    
+    try {
+        if (!idCustomer || !name || !lastName || !phone || !address || !email) {
+            return res.status(400).json({ message: "Please. Send all data" })
+        }
+        const result = await pool.query('INSERT INTO "Customer" ("idCustomer", "name", "lastName", "phone", "address", "email") VALUES ($1, $2, $3, $4, $5, $6)', [idCustomer, name, lastName, phone, address, email]);
+        console.log(result)
+        res.send("creating a customer")
+    } catch (error) {
+        console.log(error.message)
+    }
+}
