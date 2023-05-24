@@ -1,7 +1,7 @@
 const pool = require('../database');
 
 /**
- * 
+ * Devuelve todos los clientes
  * @param {*} req 
  * @param {*} res 
  */
@@ -16,7 +16,7 @@ const getAllCustomers = async (req, res) => {
 }
 
 /**
- * 
+ * Devuelve un cliente por su id
  * @param {*} req 
  * @param {*} res 
  */
@@ -39,7 +39,7 @@ const getCustomerById = async (req, res) => {
 }
 
 /**
- * Create a new customer
+ * Crea un cliente
  * @param {*} req 
  * @param {*} res 
  * @returns 
@@ -64,3 +64,24 @@ const createCustomer = async (req, res) => {
         res.json({ error: error.message })
     }
 }
+
+/**
+ * Elimina un cliente por su id
+ * @param {*} req 
+ * @param {*} res 
+ */
+const deleteCustomer = async (req, res) => {
+    
+    const { idCustomer } = req.params;
+
+    const result = await pool.query('DELETE FROM "Customer" WHERE "idCustomer" = $1', [idCustomer]);
+
+    if(result.rowCount === 0) {
+        return res.status(404).json(
+            { message: "Customer doesn't found" }
+        )
+    }
+
+    res.sendStatus(204);
+}
+
