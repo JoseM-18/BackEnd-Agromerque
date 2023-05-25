@@ -12,6 +12,7 @@ const getAllCustomers = async (req, res) => {
         res.send(result.rows)
     } catch (error) {
         console.log(error.message)
+        res.status(500).json({ message: "Internal server error getAllCustomers" });
     }
 }
 
@@ -79,7 +80,12 @@ const createCustomer = async (req, res) => {
 
         res.json(result.rows[0])
     } catch (error) {
-        res.json({ error: error.message })
+        if (error.code === '23505') {
+            res.status(400).json({ message: "Customer already exists" })
+        }else{
+            console.error(error);
+            res.status(500).json({ message: "Internal server error createCustomer" });
+        }
     }
 }
 
@@ -89,18 +95,25 @@ const createCustomer = async (req, res) => {
  * @param {*} res 
  */
 const deleteCustomer = async (req, res) => {
-    
-    const { idCustomer } = req.params;
+    try{
 
-    const result = await pool.query('DELETE FROM "Customer" WHERE "idCustomer" = $1', [idCustomer]);
+        const { idCustomer } = req.params;
+        
+        const result = await pool.query('DELETE FROM "Customer" WHERE "idCustomer" = $1', [idCustomer]);
+        
+        if(result.rowCount === 0) {
+            return res.status(404).json(
+                { message: "Customer doesn't found" }
+                )
+            }
+            
+            res.sendStatus(204);
+        }
+        catch(error){
+            
+            console.log(error.message)
 
-    if(result.rowCount === 0) {
-        return res.status(404).json(
-            { message: "Customer doesn't found" }
-        )
+        }
     }
-
-    res.sendStatus(204);
-}
 
 module.exports = { getAllCustomers, getCustomerById, createCustomer, deleteCustomer, updateCustomer }

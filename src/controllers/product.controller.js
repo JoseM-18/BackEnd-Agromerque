@@ -25,10 +25,23 @@ const getProductById = async (req, res) => {
     const { idProduct } = req.params;
     const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail" WHERE "idProduct" = $1', [idProduct]);
     console.log(result)
-    res.send(result.rows);
+    
+    if(result.rows.length === 0){
+      return res.status(404).json(
+          {message:"Product doesn't found"}
+      )
+    }
+    console.log(result)
   } catch (error) {
     console.log(error)
   }
+}
+
+const getProductByName = async (req, res) => {
+  const { name } = req.params;
+  const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "Product" NATURAL JOIN "ProductDetail" WHERE "name" = $1', [name]);
+  console.log(result)
+  res.send(result.rows);
 }
 
 /**
@@ -39,8 +52,8 @@ const getProductById = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
 
-    const { idProduct, name, description, purchasePrice, salePrice, stock, color, size, weight, image, harvestDate } = req.body;
-    if (!idProduct || !name || !description || !purchasePrice || !salePrice || !stock || !color || !size || !weight || !image || !harvestDate) {
+    const { idProduct, name, description, purchasePrice, salePrice, stock, color, size, weight, image, harvestDate, /*category*/ } = req.body;
+    if (!idProduct || !name || !description || !purchasePrice || !salePrice || !stock || !color || !size || !weight || !image || !harvestDate/* || !category*/) {
       return res.status(400).json({ message: "Please. Send all data" })
     }
     // Insertar el detalle del producto en la tabla ProductDetail
@@ -57,11 +70,23 @@ const createProduct = async (req, res) => {
     );
     console.log(productResult);
 
+    /** 
+    const categoryResult = await pool.query(
+      'INSERT INTO "Category" ("category") VALUES ($1, $2)',
+      [idProduct, category]
+    );
+*/
+    console.log(categoryResult);
+    res.send(categoryResult.rows)
   } catch (error) {
-    console.log(error)
+    if (error.code === '23505') {
+      res.status(400).json({ message: "Product already exists" })
+    }else{
+      console.error(error);
+      res.status(500).json({ message: "Internal server error createProduct" });
+    }
   }
 
-  res.send("Creating a product");
 };
 
 /**
@@ -137,4 +162,4 @@ const deleteProduct = async (req, res) => {
   res.send("Deleting a product");
 };
 
-module.exports = { getProduct, getProductById, createProduct, updateProduct, deleteProduct };
+module.exports = { getProduct, getProductById, createProduct, updateProduct, deleteProduct, getProductByName };
