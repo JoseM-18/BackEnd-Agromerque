@@ -1,9 +1,10 @@
 const pool = require('../database');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 /* PROXIMAMENTE */
 const signup = async (req, res) => {
-
+    createUser(req, res);
 
 }
 
@@ -43,12 +44,34 @@ const getUserById = async(req,res) => {
 
 const createUser = async (req, res) => {
     try {
+        let result = null;
+        const plainPassword = req.body.password;
+        const encripPassword = await bcrypt.hash(plainPassword, 10);
+        const currentDate = new Date();
+        const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
 
-        const { id, password, registrationDate } = req.body;
-        if (!id || !password || !registrationDate) {
+        if(req.body.role === 'Admin'){
+        const {  username ,password, email,role } = req.body;
+        if ( !username || !password || !email || !role) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
-        const result = await pool.query('INSERT INTO "User" ("id","password","registrationDate","role") VALUES ($1, $2, $3, $4)', [id, password, registrationDate, role]);
+        result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"', 
+        [username, encripPassword, email, formattedDate, role]);
+        const idUser = result.rows[0].idUser;
+        result = await pool.query('INSERT INTO "Admin" ("idUser") VALUES ($1)', [idUser]);  
+        }else{
+            const { username ,password, email,role, name, lastname,phone,address,birthdate  } = req.body;
+            if (!username || !password || !email || !role || !name || !lastname || !phone || !address || !birthdate) {
+                return res.status(400).json({ message: "Please. Send all data" })
+            }
+            result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"',
+             [username, encripPassword, email, formattedDate, role]);
+            const idUser = result.rows[0].idUser;
+            result = await pool.query('INSERT INTO "Customer" ("idUser","name","lastname","phone","address","birthdate") VALUES ($1, $2, $3, $4, $5, $6)',
+                [idUser, name, lastname, phone, address, birthdate]);
+        }
+
+
         console.log(result)
         res.send("creating a user")
 
