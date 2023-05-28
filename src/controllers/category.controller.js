@@ -1,6 +1,6 @@
 const pool = require('../database');
 
-const getAllCategories = async (req, res) => {
+const getAllCategories = async (req, res) => { 
   
       try {
           const result = await pool.query('SELECT * FROM "Category";')

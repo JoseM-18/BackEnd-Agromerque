@@ -1,4 +1,5 @@
 const pool = require('../database');
+const jwt = require('jsonwebtoken');
 
 
 /**
