@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../database');
+
 /**
- * obtener todos los productos de la base de datos
- * params: req, res
- * return: json
-*/
+ * Funcion para obtener todos los productos
+ * @param {*} req 
+ * @param {*} res 
+ */
 const getProduct = async (req, res) => {
 
   const result = await pool.query('SELECT * FROM "Product";')
@@ -15,9 +16,10 @@ const getProduct = async (req, res) => {
 }
 
 /**
- * obtener un producto por id
- * params: req, res
- * return: json
+ * Funcion para obtener un producto por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
  */
 const getProductById = async (req, res) => {
 
@@ -37,6 +39,11 @@ const getProductById = async (req, res) => {
   }
 }
 
+/**
+ * Funcion que obtiene un producto por su nombre
+ * @param {*} req 
+ * @param {*} res 
+ */
 const getProductByName = async (req, res) => {
   const { name } = req.params;
   const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "Product" NATURAL JOIN "ProductDetail" WHERE "name" = $1', [name]);
@@ -45,7 +52,7 @@ const getProductByName = async (req, res) => {
 }
 
 /**
- * crear un producto en la base de datos
+ * Crear un producto en la base de datos
  * @param {*} req 
  * @param {*} res 
  */
@@ -90,7 +97,7 @@ const createProduct = async (req, res) => {
 };
 
 /**
- * actualizar un producto en la base de datos
+ * Actualizar un producto en la base de datos
  * @param {*} req 
  * @param {*} res 
 */
@@ -124,7 +131,7 @@ const updateProduct = async (req, res) => {
 }
 
 /**
- * eliminar un producto en la base de datos
+ * Eliminar un producto en la base de datos
  * @param {*} req
  * @param {*} res
  * @returns

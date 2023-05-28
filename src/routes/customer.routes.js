@@ -2,7 +2,13 @@ const {Router} = require('express');
 
 const router = Router();
 
-const { getAllCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer } = require('../controllers/customer.controller')
+const { 
+  getAllCustomers, 
+  getCustomerById, 
+  createCustomer, 
+  updateCustomer, 
+  deleteCustomer 
+} = require('../controllers/customer.controller')
 
 router.get('/Customer', getAllCustomers)
 

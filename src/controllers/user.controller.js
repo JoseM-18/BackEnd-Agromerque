@@ -3,13 +3,23 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const config = require('../config');
 
-/* PROXIMAMENTE */
-const signup = async (req, res) => {
+/**
+ * Funcion para obtener todos los usuarios
+ * @param {*} req 
+ * @param {*} res 
+ */
+const signUp = async (req, res) => {
     createUser(req, res);
 
 }
 
-const signin = async (req, res) => {
+/**
+ * Funcion para obtener un usuario por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
+const signIn = async (req, res) => {
     try {
         const { username, password } = req.body;
         const result = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [username]);
@@ -20,6 +30,7 @@ const signin = async (req, res) => {
             )
         }
         const passwordBD = result.rows[0].password;
+        const idUser = result.rows[0].idUser;
         const usrname = result.rows[0].username;
         const role = result.rows[0].role;
         const isPasswordValid = await bcrypt.compare(password, passwordBD);
@@ -30,7 +41,7 @@ const signin = async (req, res) => {
             )
         }
         console.log(config.SECRET)
-        const token = jwt.sign({ username: usrname, role: role }, config.SECRET, {
+        const token = jwt.sign({ username: usrname,idUser:idUser, role: role }, config.SECRET, {
             expiresIn: time // 24 hours
         });
         
@@ -47,6 +58,11 @@ const signin = async (req, res) => {
 }
 
 
+/**
+ * Funcion para obtener todos los usuarios
+ * @param {*} req 
+ * @param {*} res 
+ */
 const getUser = async (req,res) => {
     try{
 
@@ -60,6 +76,12 @@ const getUser = async (req,res) => {
     
 }
 
+/**
+ * Funcion para obtener un usuario por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const getUserById = async(req,res) => {
     try{
 
@@ -76,6 +98,12 @@ const getUserById = async(req,res) => {
     }
 }
 
+/**
+ * Funcion que crea un usuario
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const createUser = async (req, res) => {
     try {
         let result = null;
@@ -121,6 +149,11 @@ const createUser = async (req, res) => {
     }
 }
 
+/**
+ * Funcion que actualiza un usuario por su id
+ * @param {*} req 
+ * @param {*} res 
+ */
 const updateUser = async(req,res) => {
     try{
 
@@ -139,6 +172,11 @@ const updateUser = async(req,res) => {
     }
 }
 
+/**
+ * Funcion que elimina un usuario por su id
+ * @param {*} req 
+ * @param {*} res 
+ */
 const deleteUser = async(req,res) => {
     try{
 
@@ -152,4 +190,4 @@ const deleteUser = async(req,res) => {
 
 }
 
-module.exports = {getUser, getUserById, createUser, updateUser, deleteUser, signup, signin};
+module.exports = {getUser, getUserById, createUser, updateUser, deleteUser, signUp, signIn};

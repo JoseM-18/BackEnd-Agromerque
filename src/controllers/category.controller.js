@@ -1,5 +1,11 @@
 const pool = require('../database');
 
+/**
+ * funcion que devuelve todas las categorias de la base de datos
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ */
 const getAllCategories = async (req, res) => { 
   
       try {
@@ -11,6 +17,12 @@ const getAllCategories = async (req, res) => {
       }
   }
 
+  /**
+   * funcion que devuelve una categoria por su id
+   * @param {*} req 
+   * @param {*} res 
+   * @returns 
+   */
 const getCategoryById = async (req, res) => {
     try {
         const { idCategory } = req.params;
@@ -29,6 +41,12 @@ const getCategoryById = async (req, res) => {
     }
 }
 
+/**
+ * funcion que crea una categoria en la base de datos
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const createCategory = async (req, res) => {
     try {
 
@@ -52,6 +70,12 @@ const createCategory = async (req, res) => {
     }
 }
 
+/**
+ * funcion que actualiza una categoria por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const updateCategory = async (req, res) => {
     try {
         const { idCategory } = req.params;
@@ -71,6 +95,11 @@ const updateCategory = async (req, res) => {
     }
 }
 
+/**
+ * funcion que elimina una categoria por su id
+ * @param {*} req 
+ * @param {*} res 
+ */
 const deleteCategory = async (req, res) => {
     try {
         const { idCategory } = req.params;
@@ -82,6 +111,11 @@ const deleteCategory = async (req, res) => {
     }
 }
 
+/**
+ * funcion que devuelve todos los productos de una categoria por su nombre
+ * @param {*} req 
+ * @param {*} res 
+ */
 const getProductByNameCategory = async (req, res) => {
     try {
         const { name } = req.params;

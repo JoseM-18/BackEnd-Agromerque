@@ -1,18 +1,27 @@
-const {Router} = require('express');
-const {getUser, getUserById, createUser, deleteUser, updateUser, signup, signin} = require('../controllers/user.controller')
-const {jsonwt,verifySignUp} = require('../middlewares/index')
+const { Router } = require('express');
+
 const router = Router();
 
-router.post('/signup', signup)
+const { jsonwt, verifySignUp } = require('../middlewares/index')
 
-router.post('/signin', signin)
+const { 
+    getUser, 
+    getUserById, 
+    deleteUser, 
+    updateUser, 
+    signUp, 
+    signIn 
+} = require('../controllers/user.controller')
+
+router.post('/signup', signUp)
+
+router.post('/signin', signIn)
 
 router.get('/user', getUser)
 
 router.get('/user/:idUser', getUserById)
 
-
-router.delete('/user/:idUser',deleteUser)
+router.delete('/user/:idUser', deleteUser)
 
 router.put('/user/:idUser', updateUser)
 

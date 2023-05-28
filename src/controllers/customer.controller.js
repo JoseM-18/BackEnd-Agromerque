@@ -39,6 +39,12 @@ const getCustomerById = async (req, res) => {
     }
 }
 
+/**
+ * funcion que actualiza un cliente por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const updateCustomer = async (req, res) => {
     try {
         const { idCustomer } = req.params;
@@ -104,16 +110,16 @@ const deleteCustomer = async (req, res) => {
         if(result.rowCount === 0) {
             return res.status(404).json(
                 { message: "Customer doesn't found" }
-                )
-            }
-            
-            res.sendStatus(204);
+            )
         }
-        catch(error){
             
-            console.log(error.message)
-
-        }
+        res.sendStatus(204);
     }
+    catch(error){
+            
+        console.log(error.message)
+
+    }
+}
 
 module.exports = { getAllCustomers, getCustomerById, createCustomer, deleteCustomer, updateCustomer }
