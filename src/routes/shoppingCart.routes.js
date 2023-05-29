@@ -14,7 +14,7 @@ router.get('/shoppingCart', getShoppingCart)
 
 router.get('/shoppingCart/:idShoppingCart', [jsonwt.verifyToken], getShoppingCartById)
 
-router.post('/shoppingCart', createShoppingCart)
+router.post('/shoppingCart',[jsonwt.verifyToken], createShoppingCart)
 
 router.delete('/shoppingCart/:idShoppingCart',deleteShoppingCart)
 

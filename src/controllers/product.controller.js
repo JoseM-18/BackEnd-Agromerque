@@ -33,7 +33,7 @@ const getProductById = async (req, res) => {
           {message:"Product doesn't found"}
       )
     }
-    console.log(result)
+    res.json(result.rows[0]);
   } catch (error) {
     console.log(error)
   }

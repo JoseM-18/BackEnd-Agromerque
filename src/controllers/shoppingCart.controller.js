@@ -13,8 +13,9 @@ const createShoppingCart = async (req, res) => {
     try {
         const token = req.headers['x-access-token']
         const decoded = jwt.verify(token, config.SECRET);
-        const idUser = decoded.idUser;
-        const idCustomer = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+        const idUser =decoded.idUser;
+        const idCustomerQuey =await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+        const idCustomer = idCustomerQuey.rows[0].idCustomer;
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
         if (!idCustomer ) {

@@ -1,19 +1,20 @@
-const { Pool } = require('pg');
+const pool = require('../database');
 const jwt = require('jsonwebtoken');
 const config = require('../config'); // Archivo de configuración con la clave secreta
 
-const pool = new Pool({
-    connectionString: process.env.PG_CONNECTION_STRING,
-});
 
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
     console.log(token);
     console.log(config.SECRET);
-    if (!token) return res.status(403).send({ message: 'No token provided!' });
     
+    if (!token) return res.status(403).send({ message: 'No token provided!' });
+    console.log("100");
     const decoded = jwt.verify(token, config.SECRET);
+    console.log("100.1",decoded)
+    // req.username = decoded.username;
+    // console.log("101");
     req.username = decoded.username;
 
     const client = await pool.connect();
