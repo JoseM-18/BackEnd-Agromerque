@@ -18,29 +18,30 @@ const signUp = async (req, res) => {
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
+        const role = (req.body.role).toLowerCase();
 
         //verificar si el nombre de usuario ya existe en la base de datos
+
         if (isUsernameinBD.rows.length === 0) {
-            if (req.body.role === 'Admin') {
+            result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"',
+                [username, encripPassword, email, formattedDate, "Admin"]);
+            const idUser = result.rows[0].idUser;
+            if (role === 'admin') {
                 const { username, password, email, role } = req.body;
                 if (!username || !password || !email || !role) {
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
-                result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"',
-                    [username, encripPassword, email, formattedDate, role]);
-                const idUser = result.rows[0].idUser;
+
                 result = await pool.query('INSERT INTO "Admin" ("idUser") VALUES ($1)', [idUser]);
 
 
-            } else {
+            } else if (role === 'customer') {
                 //si no es admin, entonces es un cliente y se crea en la base de datos, tanto en la tabla User como en la tabla Customer
                 const { username, password, email, role, name, lastname, phone, address, birthdate } = req.body;
                 if (!username || !password || !email || !role || !name || !lastname || !phone || !address || !birthdate) {
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
-                result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"',
-                    [username, encripPassword, email, formattedDate, role]);
-                const idUser = result.rows[0].idUser;
+
                 result = await pool.query('INSERT INTO "Customer" ("idUser","name","lastname","phone","address","birthdate") VALUES ($1, $2, $3, $4, $5, $6)',
                     [idUser, name, lastname, phone, address, birthdate]);
             }
@@ -96,7 +97,7 @@ const signIn = async (req, res) => {
             expiresIn: time // 24 hours
         });
 
-        res.json({ token});
+        res.json({ token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error signin" });
@@ -112,9 +113,20 @@ const signIn = async (req, res) => {
 const getUser = async (req, res) => {
     try {
 
+
+
         const result = await pool.query('SELECT * FROM "User";')
-        console.log(result)
-        res.send(result.rows)
+
+        let info = null;
+        if (result.rows[0].role === 'Admin') {
+            info = await pool.query('SELECT * FROM "User" NATURAL JOIN "Admin";')
+
+        } else if (result.rows[0].role === 'Customer') {
+            info = await pool.query('SELECT * FROM "User" NATURAL JOIN "Customer";')
+        }
+
+        console.log(info)
+        res.send(info.rows)
 
     } catch (error) {
         console.log(error.message)
@@ -185,43 +197,5 @@ const deleteUser = async (req, res) => {
     }
 
 }
-
-//--------------------------------funciones no exportadas--------------------------------
-
-/* 
-const createCustomer = async (req, res) => {
-    try {
-        const { username ,password, email,role, name, lastname,phone,address,birthdate  } = req.body;
-        if (!username || !password || !email || !role || !name || !lastname || !phone || !address || !birthdate) {
-            return res.status(400).json({ message: "Please. Send all data" })
-        }else{
-
-            result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"',
-            [username, encripPassword, email, formattedDate, role]);
-            const idUser = result.rows[0].idUser;
-            result = await pool.query('INSERT INTO "Customer" ("idUser","name","lastname","phone","address","birthdate") VALUES ($1, $2, $3, $4, $5, $6)',
-            [idUser, name, lastname, phone, address, birthdate]);
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error createCustomer" });
-    }
-}
-      
-const isUsernameinBD = async (username) => {
-    try {
-        const result = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [username]);
-        if (result.rows.length === 0) {
-            return false;
-        }
-        return true;
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
-}
-*/
-
-
-
 
 module.exports = { getUser, getUserById, updateUser, deleteUser, signUp, signIn };
