@@ -3,7 +3,7 @@ const { Router } = require('express');
 const router = Router();
 
 const { 
-    createPaymentMethod, 
+    createPaymentMethod,
     getPaymentMethod, 
     getPaymentMethodById, 
     updatePaymentMethod, 
