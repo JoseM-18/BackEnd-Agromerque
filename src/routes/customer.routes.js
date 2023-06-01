@@ -18,6 +18,6 @@ router.post('/Customer', createCustomer)
 
 router.delete('/Customer/:idCustomer', deleteCustomer)
 
-router.put('/user/:idUser', updateCustomer)
+router.put('/customer/:idCustomer', updateCustomer)
 
 module.exports = router;

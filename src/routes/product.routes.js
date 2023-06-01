@@ -7,6 +7,7 @@ const {jsonwt,verifySignUp} = require('../middlewares')
 const { 
     getProduct, 
     getProductById, 
+    getProductByCategory,
     createProduct, 
     updateProduct, 
     deleteProduct, 
@@ -18,6 +19,8 @@ router.get('/product', getProduct)
 router.get('/product/:idProduct', [jsonwt.verifyToken], getProductById)
 
 router.get('/product/:name', getProductByName)
+
+router.get('/product/category/:category', getProductByCategory)
 
 router.post('/product', createProduct)
 

@@ -7,6 +7,7 @@ const pool = new Pool({
   host: db.host,
   port: db.port,
   database: db.database,
+  idleTimeoutMillis: '5000'
 });
 
 

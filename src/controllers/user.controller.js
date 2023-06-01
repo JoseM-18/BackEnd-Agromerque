@@ -2,7 +2,7 @@ const pool = require('../database');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const config = require('../config');
-
+const customer = require('../controllers/customer.controller');
 
 /**
  * Funcion para obtener todos los usuarios
@@ -13,20 +13,21 @@ const signUp = async (req, res) => {
     try {
         //variables para crear un usuario en la base de datos, encriptar la contraseña y obtener la fecha actual
         let result = null;
-        const plainPassword = req.body.password;
+        const { username, password, email, role, name, lastname, phone, address, birthdate} = req.body;
+        const plainPassword = password;
         const encripPassword = await bcrypt.hash(plainPassword, 10);
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
-        const role = (req.body.role).toLowerCase();
 
         //verificar si el nombre de usuario ya existe en la base de datos
 
         if (isUsernameinBD.rows.length === 0) {
+            const roleFormat = format(role);
             result = await pool.query('INSERT INTO "User" ("username","password","email","registrationDate","role") VALUES ($1, $2, $3, $4, $5) RETURNING "idUser"',
-                [username, encripPassword, email, formattedDate, "Admin"]);
+                [username, encripPassword, email, formattedDate, roleFormat]);
             const idUser = result.rows[0].idUser;
-            if (role === 'admin') {
+            if (roleFormat === 'Admin') {
                 const { username, password, email, role } = req.body;
                 if (!username || !password || !email || !role) {
                     return res.status(400).json({ message: "Please. Send all data" })
@@ -35,25 +36,25 @@ const signUp = async (req, res) => {
                 result = await pool.query('INSERT INTO "Admin" ("idUser") VALUES ($1)', [idUser]);
 
 
-            } else if (role === 'customer') {
+            } else if (roleFormat === 'Customer') {
                 //si no es admin, entonces es un cliente y se crea en la base de datos, tanto en la tabla User como en la tabla Customer
-                const { username, password, email, role, name, lastname, phone, address, birthdate } = req.body;
-                if (!username || !password || !email || !role || !name || !lastname || !phone || !address || !birthdate) {
+                const result = await customer.createCustomer(idUser,name,lastname,address, birthdate, phone);
+                console.log(result)
+                if(result !== "Customer " + name + " created"){
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
-
-                result = await pool.query('INSERT INTO "Customer" ("idUser","name","lastname","phone","address","birthdate") VALUES ($1, $2, $3, $4, $5, $6)',
-                    [idUser, name, lastname, phone, address, birthdate]);
-            }
+                if(result === "the customer is already in the database"){
+                    return res.status(400).json({ message: "the customer is already in the database" })
+                }
+           } 
+            res.send("creating a user")
         } else {
+            
             return res.status(400).json({ message: "the username already exists, please create another one " })
         }
 
-        console.log(result)
-        res.send("creating a user")
-
+      
     } catch (error) {
-
         if (error.code === '23505') {
             res.status(400).json({ message: "the user is already in the database" })
         } else {
@@ -112,9 +113,7 @@ const signIn = async (req, res) => {
  */
 const getUser = async (req, res) => {
     try {
-
-
-
+        
         const result = await pool.query('SELECT * FROM "User";')
 
         let info = null;
@@ -196,6 +195,11 @@ const deleteUser = async (req, res) => {
         console.log(error.message)
     }
 
+}
+
+//-----------------------------funciones que no se exportan pero que se usan en este archivo-----------------------------//
+const format = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
 
 module.exports = { getUser, getUserById, updateUser, deleteUser, signUp, signIn };

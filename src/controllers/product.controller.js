@@ -35,6 +35,7 @@ const getProductById = async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.log(error)
+    return res.status(500).json({ message: "Internal server error getProductById" });
   }
 }
 
@@ -46,9 +47,28 @@ const getProductById = async (req, res) => {
 const getProductByName = async (req, res) => {
   const { name } = req.params;
   const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "Product" NATURAL JOIN "ProductDetail" WHERE "name" = $1', [name]);
+  if (result.rows.length === 0) {
+    return res.status(404).json( { message: "Product doesn't found" })
+  }
+
   console.log(result)
   res.send(result.rows);
 }
+
+const getProductByCategory = async (req, res) => {
+  const { category } = req.params;
+  const result = await 
+  pool.query('SELECT * FROM "Product" p JOIN "ProductCategory" pc ON p."idProduct" = pc."idProduct" JOIN "Category" c ON pc."idCategory" = c."idCategory" WHERE c."nameCategory" = $1', 
+  [category]);
+  if(result.rows.length === 0){
+    return res.status(404).json(
+      { message: "Product doesn't found" }
+    )
+  }
+  console.log(result)
+  res.send(result.rows);
+}
+
 
 /**
  * Crear un producto en la base de datos
@@ -57,19 +77,21 @@ const getProductByName = async (req, res) => {
  */
 const createProduct = async (req, res) => {
   try {
-
     const { idProduct, category } = req.body;
 
     if (!verificarProducto(req)) {
+
       return res.status(400).json({ message: "Please. Send all data" })
+
     }
 
     const categoryExists = await pool.query(
-      'SELECT * FROM "Category" WHERE "name" = $1 ',
+      'SELECT * FROM "Category" WHERE "nameCategory" = $1 ',
       [category]
     );
 
     if (categoryExists.rows.length === 0) {
+      // Rollback de la transacción en caso de que la categoría no exista
       return res.status(400).json({ message: "Category doesn't exists" })
     }
 
@@ -87,8 +109,10 @@ const createProduct = async (req, res) => {
     const productCategory = await insertInProductCategory(idProduct, idCategory);
     console.log(productCategory);
 
+    // Confirmar la transacción
     res.send("creating a product")
   } catch (error) {
+    // Rollback de la transacción en caso de error
     if (error.code === '23505') {
       res.status(400).json({ message: "Product already exists" })
     } else {
@@ -110,7 +134,6 @@ const updateProduct = async (req, res) => {
     return res.status(400).json({ message: "Please. Send id product" })
   }
   const { idProduct } = req.params;
-  console.log("id en uppro" + idProduct)
 
   if (!verificarActualizarProducto(req)) {
     return res.status(400).json({ message: "Please. Send all data" })
@@ -122,6 +145,7 @@ const updateProduct = async (req, res) => {
   }
 
   const updateProductDetail = await updateInProductDetail(req, idProduct);
+
   console.log(updateProductDetail)
   res.send("updating a product")
 }
@@ -135,36 +159,41 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   const idProduct = req.params.idProduct;
 
-  let idDetail = null;
-  // Obtener el idDetail correspondiente al producto
-  const detailResult = await pool.query(
-    'SELECT "idDetail" FROM "Product" WHERE "idProduct" = $1',
-    [idProduct]
-  );
-  console.log(detailResult);
-  if (detailResult.rows.length > 0) {
-    idDetail = detailResult.rows[0].idDetail;
+  try {
+
+    // Obtener el idDetail correspondiente al producto
+    const detailResult = await pool.query(
+      'SELECT "idDetail" FROM "Product" WHERE "idProduct" = $1',
+      [idProduct]
+    );
+
+    if (detailResult.rowCount === 0) {
+      return res.send("El producto no está registrado");
+    }
+
+    const idDetail = detailResult.rows[0].idDetail;
+
     // Eliminar el producto de la tabla "Product" (incluye el idDetail relacionado)
     const productDeleteResult = await pool.query(
       'DELETE FROM "Product" WHERE "idProduct" = $1',
       [idProduct]
     );
 
-    console.log(productDeleteResult);
-  } else {
-    return res.send("El producto no esta registrado")
+    // Eliminar el detalle del producto de la tabla "ProductDetail"
+    const detailDeleteResult = await pool.query(
+      'DELETE FROM "ProductDetail" WHERE "idDetail" = $1',
+      [idDetail]
+    );
+
+    if(productDeleteResult.rowCount === 0 || detailDeleteResult.rowCount === 0){
+      return res.send("El producto no está registrado");
+    }
+
+    res.send("Deleting a product");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error deleteProduct" });
   }
-
-  // Eliminar el detalle del producto de la tabla "ProductDetail"
-  const detailDeleteResult = await pool.query(
-    'DELETE FROM "ProductDetail" WHERE "idDetail" = $1',
-    [idDetail]
-  );
-
-  console.log(detailDeleteResult);
-
-  
-  res.send("Deleting a product");
 };
 
 //---------------------------------------------------- funciones que no se exportan pero se usan en las principales---------------------------------------------------------//
@@ -184,6 +213,11 @@ const verificarProducto = (req) => {
   return true;
 }
 
+/**
+ * verifica si los datos del producto a actualizar estan completos-
+ * @param {*} req 
+ * @returns 
+ */
 const verificarActualizarProducto = (req) => {
   const { name, purchasePrice, salePrice, stock, color, size, weight, description, image, harvestDate } = req.body;
   if (!name || !purchasePrice || !salePrice || !stock || !color || !size || !weight || !description || !image || !harvestDate) {
@@ -278,4 +312,16 @@ const updateInProductDetail = async (req, idProduct) => {
   return "ok";
 }
 
-module.exports = { getProduct, getProductById, createProduct, updateProduct, deleteProduct, getProductByName };
+//----------------------------------------------------funciones que no se exportan pero se usan en las principales---------------------------------------------------------//
+
+const isAvailable = async (idProduct) => {
+  const result = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
+  if (result.rows[0].stock > 0) {
+    return true;
+  }
+  return false;
+}
+
+
+
+module.exports = { getProduct, getProductById, createProduct, updateProduct, deleteProduct, getProductByName,getProductByCategory };

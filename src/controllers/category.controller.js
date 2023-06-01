@@ -6,29 +6,29 @@ const pool = require('../database');
  * @param {*} req 
  * @param {*} res 
  */
-const getAllCategories = async (req, res) => { 
-  
-      try {
-          const result = await pool.query('SELECT * FROM "Category";')
-          res.send(result.rows)
-      } catch (error) {
-          console.log(error.message)
-          res.status(500).json({ message: "Internal server error getAllCategories" });
-      }
-  }
+const getAllCategories = async (req, res) => {
 
-  /**
-   * funcion que devuelve una categoria por su id
-   * @param {*} req 
-   * @param {*} res 
-   * @returns 
-   */
+    try {
+        const result = await pool.query('SELECT * FROM "Category";')
+        res.send(result.rows)
+    } catch (error) {
+        console.log(error.message)
+        res.status(500).json({ message: "Internal server error getAllCategories" });
+    }
+}
+
+/**
+ * funcion que devuelve una categoria por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const getCategoryById = async (req, res) => {
     try {
         const { idCategory } = req.params;
         const result = await pool.query('SELECT * FROM "Category" WHERE "idCategory" = $1', [idCategory]);
-        
-        if (result.rows.length === 0) {
+
+        if (result.rowCount === 0) {
             return res.status(404).json(
                 { message: "Category doesn't found" }
             )
@@ -38,8 +38,29 @@ const getCategoryById = async (req, res) => {
 
     } catch (error) {
         console.log(error.message)
+        res.status(500).json({ message: "Internal server error getCategoryById" });
     }
 }
+
+/**
+ * obtiene una categoria por su nombre
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
+const getCategoryByName = async (req, res) => {
+    const { name } = req.params;
+    const nameFormat = format(name);
+    const result = await pool.query('SELECT * FROM "Category" WHERE "nameCategory" = $1', [nameFormat]);
+    if (result.rowCount === 0) {
+        return res.status(404).json(
+            { message: "Category doesn't found" }
+        )
+    }
+
+    res.send(result.rows);
+}
+
 
 /**
  * funcion que crea una categoria en la base de datos
@@ -54,9 +75,10 @@ const createCategory = async (req, res) => {
         if (!name) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
-        const result = await pool.query('INSERT INTO "Category" ("name") VALUES ($1)', [name]);
-        console.log(result)
-        res.send("creating a category")
+        const nameFormat = format(name);
+        await pool.query('INSERT INTO "Category" ("nameCategory") VALUES ($1)', [nameFormat]);
+
+        res.send("category " + nameFormat + " created")
 
     } catch (error) {
 
@@ -83,15 +105,21 @@ const updateCategory = async (req, res) => {
         if (!idCategory || !name) {
             return res.status(404).json({ message: "Please. Send all data" })
         }
-
+        
+        const nameFormat = format(name);
         const result = await pool.query(
-            'UPDATE "Category" SET "name" = $1 WHERE "idCategory" = $2',
-            [name, idCategory]
+            'UPDATE "Category" SET "nameCategory" = $1 WHERE "idCategory" = $2',
+            [nameFormat, idCategory]
         );
-        console.log(result)
-        res.send("updating a category")
+
+        if(result.rowCount === 0){
+            return res.status(404).json({ message: "Category doesn't found" })
+        }
+
+        res.send('category ' + nameFormat + ' updated')
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error updateCategory" })
     }
 }
 
@@ -101,30 +129,33 @@ const updateCategory = async (req, res) => {
  * @param {*} res 
  */
 const deleteCategory = async (req, res) => {
+    await pool.query('BEGIN')
     try {
         const { idCategory } = req.params;
         const result = await pool.query('DELETE FROM "Category" WHERE "idCategory" = $1', [idCategory]);
         console.log(result)
+        
+        if(result.rowCount === 0){
+            await pool.query('ROLLBACK')
+            return res.status(404).json({ message: "Category doesn't found" })
+        }
+        await pool.query('COMMIT')
         res.send("deleting a category")
     } catch (error) {
-        console.log(error.message)
+        await pool.query('ROLLBACK')
+        return res.status(500).json({ message: "Internal server error deleteCategory" })
     }
 }
+
+//---------------------------------------------funciones que no se exportan pero se usan en las funciones principales-------------
 
 /**
- * funcion que devuelve todos los productos de una categoria por su nombre
- * @param {*} req 
- * @param {*} res 
+ * genera un string con la primera letra en mayuscula y el resto en minuscula como formato 
+ * @param {*} name 
+ * @returns 
  */
-const getProductByNameCategory = async (req, res) => {
-    try {
-        const { name } = req.params;
-        const result = await pool.query('SELECT * FROM "Category" NATURAL JOIN "Product" NATURAL JOIN "ProductDetail" WHERE "Category.""name" = $1', [name]);
-        console.log(result)
-        res.send("getting a category")
-    } catch (error) {
-        console.log(error.message)
-    }
+const format = (name) => {
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
-module.exports = { getAllCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getProductByNameCategory }
+module.exports = { getAllCategories, getCategoryById, getCategoryByName,createCategory, updateCategory, deleteCategory }

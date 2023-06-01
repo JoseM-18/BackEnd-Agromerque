@@ -58,6 +58,7 @@ const getShoppingCartById = async (req, res) => {
 
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error getCartById" });
     }
 }
 
@@ -94,10 +95,16 @@ const updateShoppingCart = async (req, res) => {
             'UPDATE "ShoppingCart" SET "creationDate" = $1 WHERE "idShoppingCart" = $2',
             [creationDate, idShoppingCart]
         );
+
+        if(result.rowCount === 0){
+            return res.status(404).json({ message: "Cart doesn't found" })
+        }
+
         console.log(result)
-        res.send("updating a cart")
+        res.send("the cart " + idShoppingCart + " has been updated")
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error updateCart" })
     }
 }
 
@@ -111,6 +118,10 @@ const deleteShoppingCart = async (req, res) => {
         const { idShoppingCart } = req.params;
         const result = await pool.query('DELETE FROM "ShoppingCart" WHERE "idShoppingCart" = $1', [idShoppingCart]);
         console.log(result)
+        if(result.rowCount === 0){
+            return res.status(404).json({ message: "Cart doesn't found" })
+        }
+
         res.send("deleting a cart")
     } catch (error) {
         console.log(error.message)

@@ -1,5 +1,10 @@
 const pool = require('../database');
 
+/**
+ * obtiene todos los pedidos
+ * @param {*} req 
+ * @param {*} res 
+ */
 const getAllOrders = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM "Order";')
@@ -10,6 +15,12 @@ const getAllOrders = async (req, res) => {
     }
 }
 
+/**
+ * obtiene un pedido por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const getOrderById = async (req, res) => {
     try {
         const { idOrder } = req.params;
@@ -28,15 +39,32 @@ const getOrderById = async (req, res) => {
     }
 }
 
+/**
+ * crea un pedido 
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const createOrder = async (req, res) => {
     try {
 
-        const { idCustomer,idPaymentMethod, date, orderTotal} = req.body;
+        const { idCustomer,idPaymentMethod,idShoppingCart, date, orderTotal} = req.body;
         if (!idCustomer || !idPaymentMethod || !date || !orderTotal) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
-        const result = await pool.query('INSERT INTO "Order" ("idCustomer","idPaymentMethod","date", "orderTotal") VALUES ($1, $2, $3, $4)', 
-        [idCustomer, idPaymentMethod, date, orderTotal]);
+
+        const isCartExist = await pool.query('SELECT * FROM "Order" WHERE "idOrder" = $1', [idOrder]);
+        if (isCartExist.rows.length === 0) {
+            return res.status(400).json({ message: "shopping cart does not exist" })
+        }
+
+        const ShoppingCartHasProducts = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1', [idShoppingCart]);
+        if (ShoppingCartHasProducts.rows.length === 0) {
+            return res.status(400).json({ message: "shopping cart does not have products" })
+        }
+
+        const result = await pool.query('INSERT INTO "Order" ("idCustomer","idPaymentMethod","idShoppingCart","date", "orderTotal") VALUES ($1, $2, $3, $4, $5)', 
+        [idCustomer, idPaymentMethod, idShoppingCart,date, orderTotal]);
         console.log(result)
         res.send("creating a order")
 
@@ -52,6 +80,12 @@ const createOrder = async (req, res) => {
     }
   }
 
+  /**
+   * actualiza un pedido por su id
+   * @param {*} req 
+   * @param {*} res 
+   * @returns 
+   */
 const updateOrder = async (req, res) => {
     try {
         const { idOrder } = req.params;
@@ -65,12 +99,19 @@ const updateOrder = async (req, res) => {
             [idPaymentMethod, date, orderTotal, idOrder]
         );
         console.log(result)
-        res.send("updating a order")
+        res.send("order" + idOrder + "updated")
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error updateOrder" })
     }
 }
 
+/**
+ * borra un pedido por su id
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const deleteOrder = async (req, res) => {
     try{
 
@@ -84,9 +125,10 @@ const deleteOrder = async (req, res) => {
             )
         }
 
-        res.send(`Order ${idOrder} deleted successfully`)
+        res.send(`Order ${idOrder} canceled successfully`)
     }catch(error){
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error deleteOrder" })
     }
 }
 
