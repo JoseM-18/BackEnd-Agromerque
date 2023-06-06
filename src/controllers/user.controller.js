@@ -12,13 +12,20 @@ const customer = require('../controllers/customer.controller');
 const signUp = async (req, res) => {
     try {
         //variables para crear un usuario en la base de datos, encriptar la contraseña y obtener la fecha actual
+        console.log(req.body)
         let result = null;
-        const { username, password, email, role, name, lastname, phone, address, birthdate} = req.body;
+        const { username, password, email, name, lastname, phone, address, birthdate} = req.body;
+        let role = req.body.role;
         const plainPassword = password;
         const encripPassword = await bcrypt.hash(plainPassword, 10);
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
+        
+        //si el rol no existe reemplazelo por customer
+        if (role !== 'Admin' && role !== 'Customer') {
+            role = 'Customer';
+        }
 
         //verificar si el nombre de usuario ya existe en la base de datos
 
@@ -47,10 +54,10 @@ const signUp = async (req, res) => {
                     return res.status(400).json({ message: "the customer is already in the database" })
                 }
            } 
-            res.send("creating a user")
+            res.json({ message: "User created" })
         } else {
             
-            return res.status(400).json({ message: "the username already exists, please create another one " })
+            return res.status(400).json({ message: "user already exists" })
         }
 
       
@@ -76,7 +83,7 @@ const signIn = async (req, res) => {
     try {
         const { username, password } = req.body;
         const result = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [username]);
-
+        console.log(result.rows)
         if (result.rows.length === 0) {
             return res.status(404).json(
                 { message: "invalid access, verify your username" }
@@ -125,10 +132,11 @@ const getUser = async (req, res) => {
         }
 
         console.log(info)
-        res.send(info.rows)
+        res.json(info.rows)
 
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error getUser" })
     }
 
 }
@@ -150,8 +158,10 @@ const getUserById = async (req, res) => {
                 { message: "User doesn't found" }
             )
         }
+        return res.json(result.rows[0])
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error getUserById" })
     }
 }
 
@@ -173,9 +183,11 @@ const updateUser = async (req, res) => {
             id
         ]);
         console.log(result)
+        return res.json({ message: "User Updated" })
 
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error updateUser" })
     }
 }
 
@@ -190,16 +202,24 @@ const deleteUser = async (req, res) => {
         const id = req.params.idUser;
         const result = await pool.query('DELETE FROM "User" WHERE "idUser" = $1', [id]);
         console.log(result)
-        res.send("deleting a user")
+        res.json({ message: "User deleted" })
     } catch (error) {
         console.log(error.message)
+        return res.status(500).json({ message: "Internal server error deleteUser" })
     }
 
 }
 
 //-----------------------------funciones que no se exportan pero que se usan en este archivo-----------------------------//
 const format = (string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+    try{
+
+        return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+    }catch(error){
+        console.log(error.message)
+
+        
+    }
 }
 
 module.exports = { getUser, getUserById, updateUser, deleteUser, signUp, signIn };

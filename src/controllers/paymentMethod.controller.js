@@ -11,7 +11,7 @@ const createPaymentMethod = async (req, res) => {
 
         const { idpaymentMethod, category, bank, accountNumber, owner, securityCode, paymentStatus } = req.body;
 
-        if ( !idpaymentMethod || !category || !bank || !accountNumber || !owner || !securityCode || !paymentStatus) {
+        if (!idpaymentMethod || !category || !bank || !accountNumber || !owner || !securityCode || !paymentStatus) {
             return res.status(400).json({ message: "Please. Send all data" });
         }
 
@@ -20,7 +20,7 @@ const createPaymentMethod = async (req, res) => {
             [idpaymentMethod, category, bank, accountNumber, owner, securityCode, paymentStatus]
         );
 
-        res.send("Payment " + idpaymentMethod + " created");
+        res.json({ message: "PaymentMethod created" });
 
     } catch (error) {
         console.log(error);
@@ -36,7 +36,7 @@ const createPaymentMethod = async (req, res) => {
 const getPaymentMethod = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM "PaymentMethod"');
-        res.send(result.rows);
+        res.json(result.rows);
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal server error getPaymentMethod" });
@@ -52,7 +52,7 @@ const getPaymentMethod = async (req, res) => {
 const getPaymentMethodById = async (req, res) => {
 
     try {
-        
+
         const { idpaymentMethod } = req.params;
         const result = await pool.query('SELECT * FROM "PaymentMethod" WHERE idpaymentMethod = $1', [idpaymentMethod]);
 
@@ -60,7 +60,7 @@ const getPaymentMethodById = async (req, res) => {
             return res.status(404).json({ message: "Customer doesn't found" })
         }
 
-        res.send(result.rows);
+        res.json(result.rows[0]);
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal server error getPaymentMethodById" });
@@ -86,12 +86,12 @@ const updatePaymentMethod = async (req, res) => {
             [category, bank, accountNumber, owner, securityCode, paymentStatus, idpaymentMethod]
         );
 
-        if(result.rowCount === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Customer doesn't found" })
         }
 
-        res.send("Payment " + idpaymentMethod + " update");
-        
+        res.json({ message: "PaymentMethod updated" });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal server error updatePaymentMethod" });
@@ -110,12 +110,12 @@ const deletePaymentMethod = async (req, res) => {
         const { idpaymentMethod } = req.params;
         const result = await pool.query('DELETE FROM "PaymentMethod" WHERE idpaymentMethod = $1', [idpaymentMethod]);
 
-        if(result.rowCount === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Customer doesn't found" })
         }
-            
-        res.sendStatus(204);
-        
+
+        res.json({ message: "PaymentMethod deleted" });
+
     } catch (error) {
         console.log(error);
     }

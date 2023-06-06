@@ -11,7 +11,7 @@ const getProduct = async (req, res) => {
   const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail"')
   console.log(result)
 
-  res.send(result.rows);
+  res.json(result.rows)
 }
 
 /**
@@ -52,7 +52,7 @@ const getProductByName = async (req, res) => {
   }
 
   console.log(result)
-  res.send(result.rows);
+  res.json(result.rows);
 }
 
 const getProductByCategory = async (req, res) => {
@@ -66,7 +66,7 @@ const getProductByCategory = async (req, res) => {
     )
   }
   console.log(result)
-  res.send(result.rows);
+  res.json(result.rows);
 }
 
 
@@ -91,7 +91,6 @@ const createProduct = async (req, res) => {
     );
 
     if (categoryExists.rows.length === 0) {
-      // Rollback de la transacción en caso de que la categoría no exista
       return res.status(400).json({ message: "Category doesn't exists" })
     }
 
@@ -109,8 +108,7 @@ const createProduct = async (req, res) => {
     const productCategory = await insertInProductCategory(idProduct, idCategory);
     console.log(productCategory);
 
-    // Confirmar la transacción
-    res.send("creating a product")
+    res.json({ message: "Product created successfully" });
   } catch (error) {
     // Rollback de la transacción en caso de error
     if (error.code === '23505') {
@@ -147,7 +145,7 @@ const updateProduct = async (req, res) => {
   const updateProductDetail = await updateInProductDetail(req, idProduct);
 
   console.log(updateProductDetail)
-  res.send("updating a product")
+  res.json({ message: "Product updated successfully" });
 }
 
 /**
@@ -168,7 +166,7 @@ const deleteProduct = async (req, res) => {
     );
 
     if (detailResult.rowCount === 0) {
-      return res.send("El producto no está registrado");
+      return res.json({ message: "Product doesn't found" });
     }
 
     const idDetail = detailResult.rows[0].idDetail;
@@ -186,10 +184,10 @@ const deleteProduct = async (req, res) => {
     );
 
     if(productDeleteResult.rowCount === 0 || detailDeleteResult.rowCount === 0){
-      return res.send("El producto no está registrado");
+      return res.json({ message: "Product doesn't found" });
     }
 
-    res.send("Deleting a product");
+    res.json({ message: "Product deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error deleteProduct" });
@@ -263,7 +261,7 @@ const insertInProduct = async (req, idDetail) => {
  */
 const insertInProductCategory = async (idProduct, idCategory) => {
   await pool.query(
-    'INSERT INTO "ProductCategory" ("idProduct", "idCategory") VALUES ($1, $2)',
+    'INSERT INTO "categoryAssignment" ("idProduct", "idCategory") VALUES ($1, $2)',
     [idProduct, idCategory]
   );
   return "ok";
@@ -272,7 +270,7 @@ const insertInProductCategory = async (idProduct, idCategory) => {
 /**
  * Funcion que actualiza el producto en la tabla Product
  * @param {*} req 
- * @param {*} idProduct 
+ * @param {*} idProduct
  * @returns 
  */
 const updateInProduct = async (req, idProduct) => {

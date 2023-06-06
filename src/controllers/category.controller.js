@@ -10,7 +10,7 @@ const getAllCategories = async (req, res) => {
 
     try {
         const result = await pool.query('SELECT * FROM "Category";')
-        res.send(result.rows)
+        res.json(result.rows)
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error getAllCategories" });
@@ -34,7 +34,7 @@ const getCategoryById = async (req, res) => {
             )
         }
 
-        res.send(result.rows[0])
+        res.json(result.rows);
 
     } catch (error) {
         console.log(error.message)
@@ -58,7 +58,7 @@ const getCategoryByName = async (req, res) => {
         )
     }
 
-    res.send(result.rows);
+    res.json(result.rows);
 }
 
 
@@ -78,7 +78,7 @@ const createCategory = async (req, res) => {
         const nameFormat = format(name);
         await pool.query('INSERT INTO "Category" ("nameCategory") VALUES ($1)', [nameFormat]);
 
-        res.send("category " + nameFormat + " created")
+        res.json("category " + nameFormat + " created")
 
     } catch (error) {
 
@@ -105,18 +105,18 @@ const updateCategory = async (req, res) => {
         if (!idCategory || !name) {
             return res.status(404).json({ message: "Please. Send all data" })
         }
-        
+
         const nameFormat = format(name);
         const result = await pool.query(
             'UPDATE "Category" SET "nameCategory" = $1 WHERE "idCategory" = $2',
             [nameFormat, idCategory]
         );
 
-        if(result.rowCount === 0){
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Category doesn't found" })
         }
 
-        res.send('category ' + nameFormat + ' updated')
+        res.json("category " + nameFormat + " updated")
     } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error updateCategory" })
@@ -129,20 +129,16 @@ const updateCategory = async (req, res) => {
  * @param {*} res 
  */
 const deleteCategory = async (req, res) => {
-    await pool.query('BEGIN')
     try {
         const { idCategory } = req.params;
         const result = await pool.query('DELETE FROM "Category" WHERE "idCategory" = $1', [idCategory]);
         console.log(result)
-        
-        if(result.rowCount === 0){
-            await pool.query('ROLLBACK')
+
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Category doesn't found" })
         }
-        await pool.query('COMMIT')
-        res.send("deleting a category")
+        res.json("category deleted")
     } catch (error) {
-        await pool.query('ROLLBACK')
         return res.status(500).json({ message: "Internal server error deleteCategory" })
     }
 }
@@ -158,4 +154,4 @@ const format = (name) => {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
-module.exports = { getAllCategories, getCategoryById, getCategoryByName,createCategory, updateCategory, deleteCategory }
+module.exports = { getAllCategories, getCategoryById, getCategoryByName, createCategory, updateCategory, deleteCategory }

@@ -13,17 +13,17 @@ const createShoppingCart = async (req, res) => {
     try {
         const token = req.headers['x-access-token']
         const decoded = jwt.verify(token, config.SECRET);
-        const idUser =decoded.idUser;
-        const idCustomerQuey =await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+        const idUser = decoded.idUser;
+        const idCustomerQuey = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
         const idCustomer = idCustomerQuey.rows[0].idCustomer;
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
-        if (!idCustomer ) {
+        if (!idCustomer) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
         const result = await pool.query('INSERT INTO "ShoppingCart" ("idCustomer","creationDate") VALUES ($1,$2)', [idCustomer, formattedDate]);
         console.log(result)
-        res.send("creating a cart")
+        res.json("cart created")
 
     } catch (error) {
 
@@ -54,7 +54,7 @@ const getShoppingCartById = async (req, res) => {
             )
         }
 
-        res.send(result.rows[0])
+        res.json(result.rows);
 
     } catch (error) {
         console.log(error.message)
@@ -70,7 +70,7 @@ const getShoppingCartById = async (req, res) => {
 const getShoppingCart = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM "ShoppingCart" NATURAL JOIN "ShoppingCartProduct";')
-        res.send(result.rows)
+        res.json(result.rows);
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error getCarts" });
@@ -96,12 +96,12 @@ const updateShoppingCart = async (req, res) => {
             [creationDate, idShoppingCart]
         );
 
-        if(result.rowCount === 0){
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Cart doesn't found" })
         }
 
         console.log(result)
-        res.send("the cart " + idShoppingCart + " has been updated")
+        res.json("the cart " + idShoppingCart + " has been updated")
     } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error updateCart" })
@@ -118,14 +118,32 @@ const deleteShoppingCart = async (req, res) => {
         const { idShoppingCart } = req.params;
         const result = await pool.query('DELETE FROM "ShoppingCart" WHERE "idShoppingCart" = $1', [idShoppingCart]);
         console.log(result)
-        if(result.rowCount === 0){
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Cart doesn't found" })
         }
 
-        res.send("deleting a cart")
+        res.json("deleting a cart")
     } catch (error) {
         console.log(error.message)
     }
 }
 
-module.exports = { createShoppingCart, getShoppingCartById, getShoppingCart, updateShoppingCart, deleteShoppingCart}
+const subTotal = async (req, res) => {
+    try {
+        const { idShoppingCart } = req.params;
+        const result = await pool.query('SELECT SUM("price" * "quantity") AS "subTotal" FROM "ShoppingCartProduct" NATURAL JOIN "Product" WHERE "idShoppingCart" = $1',
+            [idShoppingCart]);
+        console.log(result)
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Cart doesn't found" })
+
+        }
+        res.json(result.rows[0])
+    } catch (error) {
+        console.log(error.message)
+        return res.status(500).json({ message: "Internal server error subTotal" })
+    }
+}
+
+
+module.exports = { createShoppingCart, getShoppingCartById, getShoppingCart, updateShoppingCart, deleteShoppingCart }

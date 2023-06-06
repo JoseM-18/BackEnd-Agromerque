@@ -9,7 +9,7 @@ const getAllCustomers = async (req, res) => {
 
     try {
         const result = await pool.query('SELECT * FROM "Customer";')
-        res.send(result.rows)
+        res.json(result.rows)
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error getAllCustomers" });
@@ -32,7 +32,7 @@ const getCustomerById = async (req, res) => {
             )
         }
 
-        res.send(result.rows[0])
+        res.json(result.rows[0])
 
     } catch (error) {
         console.log(error.message)
@@ -65,7 +65,7 @@ const updateCustomer = async (req, res) => {
             return res.status(404).json({ message: "Customer doesn't found" })
         }
 
-        res.send("customer " + name + " updated")
+        res.json({ message: "Customer Updated" })
     } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error updateCustomer" })
@@ -89,7 +89,7 @@ const createCustomer = async (idUser, name, lastname, address, birthdate, phone)
             'INSERT INTO "Customer" ("idUser", "name", "lastname", "address", "birthdate", "phone") VALUES ($1, $2, $3, $4, $5, $6) ',
             [idUser, name, lastname, address, birthdate, phone]
         );
-        console.log("Customer " + name + " created")
+
         return "Customer " + name + " created"
     } catch (error) {
         if (error.code === '23505') {
@@ -119,7 +119,7 @@ const deleteCustomer = async (req, res) => {
             )
         }
 
-        res.send("Customer " + idCustomer + " deleted")
+        res.json({ message: "Customer Deleted" })
     }
     catch (error) {
 

@@ -1,32 +1,6 @@
 const pool = require('../database');
 const jwt = require('jsonwebtoken');
 
-
-/**
- * funcion que verifica si el rol es permitido
- */
-const isPermitted = async (req, res, next) => {
-    try{
-    //obtener el token del header y sacar el rol del usuario
-    const token = req.headers['x-access-token'];
-    if (!token) return res.status(403).send({ message: 'No token provided!' });
-    const decoded = jwt.verify(token, config.SECRET);
-    const role = decoded.role;
-
-    if (role === 'Admin' || role === 'Customer') {
-      next();
-      return;
-    }else{  
-      return res.status(403).json({message:"Require admin Role!"})
-    }
-
-    }catch(error){
-        console.error(error);
-        res.status(500).json({ message: "Internal server error isAdmin" });
-    }
- 
-}
-
 /**
  * funcion que verifica si el id existe en la base de datos
  * 
@@ -48,4 +22,4 @@ const isIdInDB = async (req, res, next) => {
     }
 }
 
-module.exports = {isPermitted,isIdInDB};
+module.exports = {isIdInDB};

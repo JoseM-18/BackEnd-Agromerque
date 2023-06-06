@@ -8,7 +8,7 @@ const pool = require('../database');
 const getAllOrders = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM "Order";')
-        res.send(result.rows)
+        res.json(result.rows)
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error getAllOrders" });
@@ -32,7 +32,7 @@ const getOrderById = async (req, res) => {
             )
         }
 
-        res.send(result.rows[0])
+        res.json(result.rows);
 
     } catch (error) {
         console.log(error.message)
@@ -66,7 +66,7 @@ const createOrder = async (req, res) => {
         const result = await pool.query('INSERT INTO "Order" ("idCustomer","idPaymentMethod","idShoppingCart","date", "orderTotal") VALUES ($1, $2, $3, $4, $5)', 
         [idCustomer, idPaymentMethod, idShoppingCart,date, orderTotal]);
         console.log(result)
-        res.send("creating a order")
+        res.json("creating a order")
 
     } catch (error) {
 
@@ -99,7 +99,7 @@ const updateOrder = async (req, res) => {
             [idPaymentMethod, date, orderTotal, idOrder]
         );
         console.log(result)
-        res.send("order" + idOrder + "updated")
+        res.json(`Order updated successfully`)
     } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error updateOrder" })
@@ -125,11 +125,13 @@ const deleteOrder = async (req, res) => {
             )
         }
 
-        res.send(`Order ${idOrder} canceled successfully`)
+        res.json(`Order deleted successfully`)
     }catch(error){
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error deleteOrder" })
     }
 }
+
+
 
 module.exports = { getAllOrders, getOrderById, createOrder, updateOrder, deleteOrder }

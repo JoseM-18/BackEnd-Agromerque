@@ -10,11 +10,8 @@ const verifyToken = async (req, res, next) => {
     console.log(config.SECRET);
     
     if (!token) return res.status(403).send({ message: 'No token provided!' });
-    console.log("100");
     const decoded = jwt.verify(token, config.SECRET);
-    console.log("100.1",decoded)
-    // req.username = decoded.username;
-    // console.log("101");
+    
     req.username = decoded.username;
 
     const client = await pool.connect();

@@ -12,7 +12,7 @@ const createShoppingCartProduct = async (req, res) => {
     try {
         const { idShoppingCart, idProduct, quantity } = req.body;
 
-        if(!idShoppingCart || !idProduct || !quantity){
+        if (!idShoppingCart || !idProduct || !quantity) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
 
@@ -20,9 +20,15 @@ const createShoppingCartProduct = async (req, res) => {
         if (isInCart.rows.length !== 0) {
             return res.status(400).json({ message: "the product is already in the cart" })
         }
- 
+
+        const avaiableStock = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
+        if (avaiableStock.rows[0].stock < quantity) {
+            return res.status(400).json({ message: "the product is not available in the stock" })
+        }
+
+
         await pool.query('INSERT INTO "ShoppingCartProduct" ("idShoppingCart","idProduct","quantity") VALUES ($1,$2,$3)', [idShoppingCart, idProduct, quantity]);
-        res.send("the product " + idProduct + " was added to the cart " + idShoppingCart )
+        res.json("the product " + idProduct + " was added to the cart " + idShoppingCart)
 
     } catch (error) {
 
@@ -53,7 +59,7 @@ const getShoppingCartProductById = async (req, res) => {
             )
         }
 
-        res.send(result.rows[0])
+        res.json(result.rows[0])
 
     } catch (error) {
         console.log(error.message)
@@ -69,7 +75,7 @@ const getShoppingCartProductById = async (req, res) => {
 const getShoppingCartProduct = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM "ShoppingCartProduct"');
-        res.send(result.rows)
+        res.json(result.rows)
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error getCartProduct" })
@@ -85,13 +91,13 @@ const deleteShoppingCartProduct = async (req, res) => {
     try {
         const { idShoppingCartProduct } = req.params;
         const result = await pool.query('DELETE FROM "ShoppingCartProduct" WHERE "idShoppingCartProduct" = $1', [idShoppingCartProduct]);
-        
-        if(result.rowCount === 0){
+
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Cart product doesn't found" })
         }
 
-        
-        res.send(`Cart product ${idShoppingCartProduct} deleted succesfully`)
+
+        res.json(`Cart product ${idShoppingCartProduct} deleted succesfully`)
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error deleteCartProduct" })
@@ -107,21 +113,21 @@ const updateShoppingCartProduct = async (req, res) => {
     try {
         const { idShoppingCartProduct } = req.params;
         const { idShoppingCart, idProduct, quantity } = req.body;
-        if(!idShoppingCartProduct || !idShoppingCart || !idProduct || !quantity){
+        if (!idShoppingCartProduct || !idShoppingCart || !idProduct || !quantity) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
 
         const resul = await pool.query('UPDATE "ShoppingCartProduct" SET "idShoppingCart" = $1, "idProduct" = $2, "quantity" = $3 WHERE "idShoppingCartProduct" = $4', [idShoppingCart, idProduct, quantity, idShoppingCartProduct]);
-        
-        if(resul.rowCount === 0){
+
+        if (resul.rowCount === 0) {
             return res.status(404).json({ message: "Cart product doesn't found" })
         }
-        
-        res.send("cart " + idShoppingCartProduct + " updated succesfully")
+
+        res.json("cart " + idShoppingCartProduct + " updated succesfully")
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error updateCartProduct" })
     }
 }
 
-module.exports = { createShoppingCartProduct, getShoppingCartProductById, getShoppingCartProduct, updateShoppingCartProduct,deleteShoppingCartProduct };
+module.exports = { createShoppingCartProduct, getShoppingCartProductById, getShoppingCartProduct, updateShoppingCartProduct, deleteShoppingCartProduct };
