@@ -50,8 +50,13 @@ const createShoppingCartProduct = async (req, res) => {
  */
 const getShoppingCartProductById = async (req, res) => {
     try {
-        const { idShoppingCartProduct } = req.params;
-        const result = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCartProduct" = $1', [idShoppingCartProduct]);
+        const token = req.headers["x-access-token"];
+        if (!token) {
+            return res.status(403).json({ message: "No token provided" })
+        }
+        const decoded = jwt.verify(token, config.SECRET);
+        const idCartProduct = decoded.idUser;
+        const result = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCartProduct" = $1', [idCartProduct]);
 
         if (result.rows.length === 0) {
             return res.status(404).json(
@@ -59,7 +64,7 @@ const getShoppingCartProductById = async (req, res) => {
             )
         }
 
-        res.json(result.rows[0])
+        res.json(result.rows)
 
     } catch (error) {
         console.log(error.message)
@@ -74,6 +79,7 @@ const getShoppingCartProductById = async (req, res) => {
  */
 const getShoppingCartProduct = async (req, res) => {
     try {
+       
         const result = await pool.query('SELECT * FROM "ShoppingCartProduct"');
         res.json(result.rows)
     } catch (error) {

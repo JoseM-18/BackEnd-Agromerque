@@ -20,6 +20,11 @@ const signUp = async (req, res) => {
         const encripPassword = await bcrypt.hash(plainPassword, 10);
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+
+        if(!username || !password || username === "" || password === ""){
+            return res.status(400).json({ message: "Please. Send all data" })
+        }
+
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
         
         //si el rol no existe reemplazelo por customer
@@ -36,14 +41,16 @@ const signUp = async (req, res) => {
             const idUser = result.rows[0].idUser;
             if (roleFormat === 'Admin') {
                 const { username, password, email, role } = req.body;
-                if (!username || !password || !email || !role) {
+                if (!username || !password || !email || !role || username === "" || password === "" || email === "" || role === "") {
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
-
                 result = await pool.query('INSERT INTO "Admin" ("idUser") VALUES ($1)', [idUser]);
+            }
 
-
-            } else if (roleFormat === 'Customer') {
+            if (roleFormat === 'Customer') {
+                if(!name || !lastname || !address || !birthdate || !phone || name === "" || lastname === "" || address === "" || birthdate === "" || phone === ""){
+                    return res.status(400).json({ message: "Please. Send all data" })
+                }
                 //si no es admin, entonces es un cliente y se crea en la base de datos, tanto en la tabla User como en la tabla Customer
                 const result = await customer.createCustomer(idUser,name,lastname,address, birthdate, phone);
                 console.log(result)
@@ -56,7 +63,6 @@ const signUp = async (req, res) => {
            } 
             res.json({ message: "User created" })
         } else {
-            
             return res.status(400).json({ message: "user already exists" })
         }
 
