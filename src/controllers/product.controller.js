@@ -46,12 +46,12 @@ const getProductById = async (req, res) => {
  */
 const getProductByName = async (req, res) => {
   const { name } = req.params;
-  const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "Product" NATURAL JOIN "ProductDetail" WHERE "name" = $1', [name]);
+  console.log(name)
+  const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail" WHERE "name" LIKE $1', [`%${name}%`]);
   if (result.rows.length === 0) {
     return res.status(404).json( { message: "Product doesn't found" })
   }
-
-  console.log(result)
+ 
   res.json(result.rows);
 }
 

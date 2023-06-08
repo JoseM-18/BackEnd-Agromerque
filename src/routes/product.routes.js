@@ -18,7 +18,7 @@ router.get('/product', getProduct)
 
 router.get('/product/:idProduct', [jsonwt.verifyToken], getProductById)
 
-router.get('/product/:name', getProductByName)
+router.get('/product/name/:name', getProductByName)
 
 router.get('/product/category/:category', getProductByCategory)
 

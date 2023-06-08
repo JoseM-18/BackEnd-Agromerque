@@ -28,7 +28,7 @@ const signUp = async (req, res) => {
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
         
         //si el rol no existe reemplazelo por customer
-        if (role !== 'Admin' && role !== 'Customer') {
+        if (role !== 'Admin' && role !== 'Customer') { 
             role = 'Customer';
         }
 
