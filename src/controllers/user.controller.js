@@ -89,6 +89,9 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
     try {
         const { username, password } = req.body;
+        if (!username || !password || username === "" || password === "") {
+            return res.status(400).json({ message: "Please. Send all data" })
+        }
         const result = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [username]);
         console.log(result.rows)
         if (result.rows.length === 0) {
