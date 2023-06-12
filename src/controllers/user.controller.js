@@ -27,8 +27,9 @@ const signUp = async (req, res) => {
 
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
         
+        console.log(role)
         //si el rol no existe reemplazelo por customer
-        if (role !== 'Admin' && role !== 'Customer') { 
+        if (role === null || role === undefined || role === "") { 
             role = 'Customer';
         }
 
@@ -164,6 +165,9 @@ const getUserById = async (req, res) => {
                 { message: "User doesn't found" }
             )
         }
+        const password = result.rows[0].password;
+        
+
         return res.json(result.rows[0])
     } catch (error) {
         console.log(error.message)

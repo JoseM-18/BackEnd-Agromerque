@@ -22,7 +22,7 @@ router.get('/product/name/:name', getProductByName)
 
 router.get('/product/category/:category', getProductByCategory)
 
-router.post('/product', createProduct)
+router.post('/product', [jsonwt.verifyToken,jsonwt.isAdmin], createProduct)
 
 router.delete('/product/:idProduct',deleteProduct)
 

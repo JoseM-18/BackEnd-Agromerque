@@ -46,13 +46,19 @@ const getProductById = async (req, res) => {
  */
 const getProductByName = async (req, res) => {
   const { name } = req.params;
+  const nameFormat = format(name);
   console.log(name)
-  const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail" WHERE "name" LIKE $1', [`%${name}%`]);
-  if (result.rows.length === 0) {
+  const productExists = await pool.query('SELECT * FROM "Product" WHERE "name" LIKE $1', [`%${nameFormat}%`]);
+
+  const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail" WHERE "name" LIKE $1', [`%${nameFormat}%`]);
+  
+  if (productExists.rowCount === 0) {
+    console.log("no hay productos")
     return res.status(404).json( { message: "Product doesn't found" })
   }
  
   res.json(result.rows);
+  console.log(result)
 }
 
 const getProductByCategory = async (req, res) => {
@@ -79,14 +85,23 @@ const createProduct = async (req, res) => {
   try {
     const { idProduct, category } = req.body;
 
-    if (!verificarProducto(req)) {
+    const productExists = await pool.query(
+      'SELECT * FROM "Product" WHERE "idProduct" = $1 ',
+      [idProduct]
+    );
 
+    if (productExists.rows.length > 0) {
+      return res.status(400).json({ message: "Product already exists" })
+    }
+
+    if (!verificarProducto(req)) {
+      console.log("error en los datos")
       return res.status(400).json({ message: "Please. Send all data" })
 
     }
 
     const categoryExists = await pool.query(
-      'SELECT * FROM "Category" WHERE "nameCategory" = $1 ',
+      'SELECT * FROM "Category" WHERE "idCategory" = $1 ',
       [category]
     );
 
@@ -94,7 +109,6 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Category doesn't exists" })
     }
 
-    const idCategory = categoryExists.rows[0].idCategory;
 
     // Insertar el detalle del producto en la tabla ProductDetail
     const idDetail = await insertInDetailProduct(req);
@@ -105,7 +119,7 @@ const createProduct = async (req, res) => {
     console.log(productResult);
 
     // Insertar el producto en la tabla ProductCategory
-    const productCategory = await insertInProductCategory(idProduct, idCategory);
+    const productCategory = await insertInProductCategory(idProduct, category);
     console.log(productCategory);
 
     res.json({ message: "Product created successfully" });
@@ -211,6 +225,7 @@ const verificarProducto = (req) => {
   return true;
 }
 
+
 /**
  * verifica si los datos del producto a actualizar estan completos-
  * @param {*} req 
@@ -232,7 +247,7 @@ const verificarActualizarProducto = (req) => {
 const insertInDetailProduct = async (req) => {
   const { color, size, weight, description, image, harvestDate } = req.body;
   const result = await pool.query(
-    'INSERT INTO "ProductDetail" ("color", "size", "weight", "description", "image ", "harvestDate") VALUES ($1, $2, $3, $4, $5, $6) RETURNING "idDetail"',
+    'INSERT INTO "ProductDetail" ("color", "size", "weight", "description", "image", "harvestDate") VALUES ($1, $2, $3, $4, $5, $6) RETURNING "idDetail"',
     [color, size, weight, description, image, harvestDate]
   );
   return result.rows[0].idDetail;
@@ -246,9 +261,10 @@ const insertInDetailProduct = async (req) => {
  */
 const insertInProduct = async (req, idDetail) => {
   const { idProduct, name, purchasePrice, salePrice, stock } = req.body;
+  const nameFormat = format(name);
   await pool.query(
     'INSERT INTO "Product" ("idProduct", "idDetail", "name",  "purchasePrice", "salePrice", "stock") VALUES ($1, $2, $3, $4, $5, $6)',
-    [idProduct, idDetail, name, purchasePrice, salePrice, stock]
+    [idProduct, idDetail, nameFormat, purchasePrice, salePrice, stock]
   );
   return "ok";
 }
@@ -320,6 +336,16 @@ const isAvailable = async (idProduct) => {
   return false;
 }
 
+const format = (string) => {
+  try{
+
+      return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  }catch(error){
+      console.log(error.message)
+
+      
+  }
+}
 
 
 module.exports = { getProduct, getProductById, createProduct, updateProduct, deleteProduct, getProductByName,getProductByCategory };
