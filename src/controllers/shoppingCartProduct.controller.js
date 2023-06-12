@@ -10,25 +10,62 @@ const config = require('../config');
  */
 const createShoppingCartProduct = async (req, res) => {
     try {
-        const { idShoppingCart, idProduct, amount } = req.body;
+        const token = req.headers['x-access-token'];
 
-        if (!idShoppingCart || !idProduct || !amount) {
-            return res.status(400).json({ message: "Please. Send all data" })
+        if(!token) return res.status(401).json({message: "No token provided"});
+
+        const decoded = jwt.verify(token, config.SECRET);
+        const idUser = decoded.idUser;
+        console.log(req.body);
+
+        const idCustomerBd = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+
+        if (idCustomerBd.rows.length === 0) {
+            return res.status(404).json({ message: "the customer is not in the database" })
         }
 
-        const isInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1 AND "idProduct" = $2', [idShoppingCart, idProduct]);
-        if (isInCart.rows.length !== 0) {
-            return res.status(400).json({ message: "the product is already in the cart" })
+        const idCustomer = idCustomerBd.rows[0].idCustomer;
+
+        const idShoppingCartBd = await pool.query('SELECT "idShoppingCart" FROM "ShoppingCart" WHERE "idCustomer" = $1', [idCustomer]);
+
+        if (idShoppingCartBd.rows.length === 0) {
+            return res.status(404).json({ message: "the shopping cart is not in the database" })
+        }
+
+
+        const idShoppingCart = idShoppingCartBd.rows[0].idShoppingCart;
+    
+        const { idProduct, amount } = req.body;
+        console.log(idProduct, amount);
+        if (!idShoppingCart || !idProduct || !amount) {
+            return res.status(400).json({ message: "Please. Send all data" })
         }
 
         const avaiableStock = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
         if (avaiableStock.rows[0].stock < amount) {
             return res.status(400).json({ message: "the product is not available in the stock" })
         }
+        const isInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1 AND "idProduct" = $2', [idShoppingCart, idProduct]);
+        if (isInCart.rows.length !== 0) {
+            
+            const currentAmount = parseInt(isInCart.rows[0].amount, 10);
+            const newAmount = currentAmount + parseInt(amount, 10);
+            await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = $1 WHERE "idShoppingCart" = $2 AND "idProduct" = $3', [newAmount, idShoppingCart, idProduct]);
+            
+            const newStock = avaiableStock.rows[0].stock - amount;
+            await pool.query('UPDATE "Product" SET "stock" = $1 WHERE "idProduct" = $2', [newStock, idProduct]);
+            return res.json("the product was added to the cart ")
+        }
+
 
 
         await pool.query('INSERT INTO "ShoppingCartProduct" ("idShoppingCart","idProduct","amount") VALUES ($1,$2,$3)', [idShoppingCart, idProduct, amount]);
         res.json("the product was added to the cart ")
+
+        const newStock = avaiableStock.rows[0].stock - amount;
+        await pool.query('UPDATE "Product" SET "stock" = $1 WHERE "idProduct" = $2', [newStock, idProduct]);
+
+
 
     } catch (error) {
 
