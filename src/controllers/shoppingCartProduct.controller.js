@@ -10,9 +10,9 @@ const config = require('../config');
  */
 const createShoppingCartProduct = async (req, res) => {
     try {
-        const { idShoppingCart, idProduct, quantity } = req.body;
+        const { idShoppingCart, idProduct, amount } = req.body;
 
-        if (!idShoppingCart || !idProduct || !quantity) {
+        if (!idShoppingCart || !idProduct || !amount) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
 
@@ -22,13 +22,13 @@ const createShoppingCartProduct = async (req, res) => {
         }
 
         const avaiableStock = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
-        if (avaiableStock.rows[0].stock < quantity) {
+        if (avaiableStock.rows[0].stock < amount) {
             return res.status(400).json({ message: "the product is not available in the stock" })
         }
 
 
-        await pool.query('INSERT INTO "ShoppingCartProduct" ("idShoppingCart","idProduct","quantity") VALUES ($1,$2,$3)', [idShoppingCart, idProduct, quantity]);
-        res.json("the product " + idProduct + " was added to the cart " + idShoppingCart)
+        await pool.query('INSERT INTO "ShoppingCartProduct" ("idShoppingCart","idProduct","amount") VALUES ($1,$2,$3)', [idShoppingCart, idProduct, amount]);
+        res.json("the product was added to the cart ")
 
     } catch (error) {
 

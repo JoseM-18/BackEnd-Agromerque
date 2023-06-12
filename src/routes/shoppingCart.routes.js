@@ -4,15 +4,14 @@ const {jsonwt,verifySignUp} = require('../middlewares')
 
 const { 
     getShoppingCart, 
-    getShoppingCartById, 
+    getShoppingCartByIdUser, 
     createShoppingCart, 
     updateShoppingCart, 
     deleteShoppingCart 
 } = require('../controllers/shoppingCart.controller')
 
-router.get('/shoppingCart', getShoppingCart)
 
-router.get('/shoppingCart/:idShoppingCart', [jsonwt.verifyToken], getShoppingCartById)
+router.get('/shoppingCart', [jsonwt.verifyToken], getShoppingCartByIdUser)
 
 router.post('/shoppingCart',[jsonwt.verifyToken], createShoppingCart)
 

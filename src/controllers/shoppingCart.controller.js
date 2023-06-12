@@ -43,24 +43,34 @@ const createShoppingCart = async (req, res) => {
  * @param {*} res 
  * @returns 
  */
-const getShoppingCartById = async (req, res) => {
+const getShoppingCartByIdUser = async (req, res) => {
     try {
-        const { idShoppingCart } = req.params;
-        const result = await pool.query('SELECT * FROM "ShoppingCart" NATURAL JOIN "ShoppingCartProduct" WHERE "ShoppingCart" = $1', [idShoppingCart]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json(
-                { message: "Cart doesn't found" }
-            )
+        const token = req.headers['x-access-token']
+        const decoded = jwt.verify(token, config.SECRET);
+        const idUser = decoded.idUser;
+        const idCustomerQuey = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+        const idCustomer = idCustomerQuey.rows[0].idCustomer;
+        if (!idCustomer) {
+            return res.status(400).json({ message: "Please. Send all data" })
         }
 
-        res.json(result.rows);
-
+        const result = await pool.query('SELECT * FROM "ShoppingCart" WHERE "idCustomer" = $1', [idCustomer]);
+ 
+        if(result.rowCount === 0){
+            return res.status(404).json({message: "Cart doesn't found"})
+        }
+        const productsInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1', [result.rows[0].idShoppingCart]);
+        result.rows[0].products = productsInCart.rows;
+        
+        res.json(result.rows[0]);
     } catch (error) {
         console.log(error.message)
-        return res.status(500).json({ message: "Internal server error getCartById" });
+        return res.status(500).json({ message: "Internal server error getCarts" });
     }
+
 }
+
+
 
 /**
  * Funcion que obtiene todos los carritos
@@ -146,4 +156,4 @@ const subTotal = async (req, res) => {
 }
 
 
-module.exports = { createShoppingCart, getShoppingCartById, getShoppingCart, updateShoppingCart, deleteShoppingCart }
+module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteShoppingCart }
