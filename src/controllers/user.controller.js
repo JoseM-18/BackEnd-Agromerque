@@ -92,30 +92,46 @@ const signIn = async (req, res) => {
         if (!username || !password || username === "" || password === "") {
             return res.status(400).json({ message: "Please. Send all data" })
         }
-        const result = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [username]);
+        const result = await pool.query('SELECT * FROM "User"  WHERE "username" = $1', [username]);
         console.log(result.rows)
         if (result.rows.length === 0) {
             return res.status(404).json(
                 { message: "invalid access, verify your username" }
             )
         }
+
+        
+
         const passwordBD = result.rows[0].password;
         const idUser = result.rows[0].idUser;
         const usrname = result.rows[0].username;
         const role = result.rows[0].role;
         const isPasswordValid = await bcrypt.compare(password, passwordBD);
         const time = '86400s';
+
+        
         if (!isPasswordValid) {
             return res.status(401).json(
                 { message: "Invalid Password" }
-            )
-        }
+                )
+            }
+            
+            if(role === 'Customer'){
+    
+                const idCustomerBD = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+                const idCustomer = idCustomerBD.rows[0].idCustomer;
 
-        const token = jwt.sign({ username: usrname, idUser: idUser, role: role }, config.SECRET, {
-            expiresIn: time // 24 hours
-        });
+                const token = jwt.sign({ username: usrname, idUser: idUser, idCustomer: idCustomer, role: role }, config.SECRET, {
+                    expiresIn: time // 24 hours
+                });
+                return res.json({ token });
+            }else{
+                const token = jwt.sign({ username: usrname, idUser: idUser, role: role }, config.SECRET, {
+                    expiresIn: time // 24 hours
+                });
+                return res.json({ token });
+            }
 
-        res.json({ token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error signin" });

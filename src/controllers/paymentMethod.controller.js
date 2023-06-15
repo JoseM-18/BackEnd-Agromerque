@@ -53,14 +53,25 @@ const getPaymentMethodById = async (req, res) => {
 
     try {
 
-        const { idpaymentMethod } = req.params;
+        const token = req.headers["x-access-token"];
+        const decoded = jwt.verify(token, config.SECRET);
+        const idCustomer = decoded.idCustomer;
+        
+
+        if (!idCustomer) {
+            return res.status(400).json({ message: "Please. Send all data" })
+        }
+
+        const idPaymentMethodbd = await pool.query('SELECT "idPaymentMethod" FROM "PaymentMethod" WHERE "idCustomer" = $1', [idCustomer]);
+        const idpaymentMethod = idPaymentMethodbd.rows[0].idpaymentMethod;
+
         const result = await pool.query('SELECT * FROM "PaymentMethod" WHERE idpaymentMethod = $1', [idpaymentMethod]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "Customer doesn't found" })
         }
 
-        res.json(result.rows[0]);
+        res.json(result.rows);
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal server error getPaymentMethodById" });

@@ -9,7 +9,7 @@ const pool = require('../database');
 const getProduct = async (req, res) => {
 
   const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail"')
-  console.log(result)
+
 
   res.json(result.rows)
 }

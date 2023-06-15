@@ -50,6 +50,7 @@ const getShoppingCartByIdUser = async (req, res) => {
         const idUser = decoded.idUser;
         const idCustomerQuey = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
         const idCustomer = idCustomerQuey.rows[0].idCustomer;
+
         if (!idCustomer) {
             return res.status(400).json({ message: "Please. Send all data" })
         }
@@ -155,5 +156,28 @@ const subTotal = async (req, res) => {
     }
 }
 
+const getAllShoppingCartProducts = async (req, res) => {
+    try {
 
-module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteShoppingCart }
+        
+        if (!req.headers['x-access-token']) {
+            return res.status(400).json({ message: "signing again" })
+        }
+        const token = req.headers['x-access-token']
+        const decoded = jwt.verify(token, config.SECRET);
+        const idCustomer = decoded.idCustomer;
+        const result = await pool.query('SELECT "idProduct", "amount" FROM "ShoppingCart" NATURAL JOIN "ShoppingCartProduct" WHERE "idCustomer" = $1', [idCustomer]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Cart doesn't found" })
+        }
+        res.json(result.rows);
+        console.log(result.rows)
+    }catch (error){
+        console.log(error.message)
+        return res.status(500).json({ message: "Internal server error getAllShoppingCartProducts" })
+    }
+
+}
+
+
+module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteShoppingCart,getAllShoppingCartProducts }

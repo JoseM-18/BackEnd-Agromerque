@@ -7,7 +7,8 @@ const {
     getShoppingCartByIdUser, 
     createShoppingCart, 
     updateShoppingCart, 
-    deleteShoppingCart 
+    deleteShoppingCart ,
+    getAllShoppingCartProducts
 } = require('../controllers/shoppingCart.controller')
 
 
@@ -16,6 +17,8 @@ router.get('/shoppingCart', [jsonwt.verifyToken], getShoppingCartByIdUser)
 router.post('/shoppingCart',[jsonwt.verifyToken], createShoppingCart)
 
 router.delete('/shoppingCart/:idShoppingCart',deleteShoppingCart)
+
+router.get('/shoppingCart/products', getAllShoppingCartProducts)
 
 router.put('/shoppingCart/:idShoppingCart', updateShoppingCart)
 
