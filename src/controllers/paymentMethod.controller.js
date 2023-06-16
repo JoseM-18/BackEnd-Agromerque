@@ -81,7 +81,7 @@ const getPaymentMethodById = async (req, res) => {
 /**
  * Funcion que actualiza un metodo de pago por su id
  * @param {*} req 
- * @param {*} res 
+ * @param {*} res
  * @returns 
  */
 const updatePaymentMethod = async (req, res) => {

@@ -124,16 +124,51 @@ const updateShoppingCart = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const deleteShoppingCart = async (req, res) => {
+const deleteProductsFromSC= async (req, res) => {
     try {
-        const { idShoppingCart } = req.params;
-        const result = await pool.query('DELETE FROM "ShoppingCart" WHERE "idShoppingCart" = $1', [idShoppingCart]);
-        console.log(result)
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Cart doesn't found" })
+        const token = req.headers['x-access-token']
+        const decoded = jwt.verify(token, config.SECRET);
+        const idCustomer = decoded.idCustomer;
+        const { idProduct,amount } = req.body;
+        console.log(req.body)
+        console.log(idProduct)
+        console.log(amount)
+        if (!idProduct || !amount) {
+            return res.status(404).json({ message: "Please. Send all data" })
+        }
+        
+        const stock = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
+            [idProduct];
+        
+
+        if (stock.rowCount === 0) {
+            return res.status(404).json({ message: "Product doesn't found" })
         }
 
-        res.json("deleting a cart")
+        if (stock.rows[0].stock < amount) {
+            return res.status(400).json({ message: "There is not enough stock" })
+        }
+
+
+        if(stock.rows[0].stock === amount){
+            const result = await pool.query('DELETE FROM "ShoppingCartProduct" WHERE "idProduct" = $1 AND "idCustomer" = $2',
+            [idProduct, idCustomer]);
+            console.log(result)
+            res.json("the product has been deleted")
+        }
+
+        if(stock.rows[0].stock > amount){
+            const idShoppingCartProduct = await pool.query('SELECT scp.idShoppingCartProduct FROM shoppingcart sc JOIN shoppingcartproduct scp ON sc.idShoppingCart = scp.idShoppingCart JOIN product p ON scp.idProduct = p.idProduct WHERE sc.idCustomer = $1 AND p.idProduct = $2'
+            [idCustomer, idProduct]);
+
+
+            const result = await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = "amount" - $1 WHERE "idProduct" = $2 AND "shoppingCartProduct" = $3',
+            [amount, idProduct, idShoppingCartProduct]);
+            console.log(result)
+            res.json("the product has been updated")
+        }   
+
+
     } catch (error) {
         console.log(error.message)
     }
@@ -180,4 +215,4 @@ const getAllShoppingCartProducts = async (req, res) => {
 }
 
 
-module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteShoppingCart,getAllShoppingCartProducts }
+module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteProductsFromSC,getAllShoppingCartProducts }
