@@ -1,5 +1,6 @@
 const pool = require("../database");
-
+const jwt = require("jsonwebtoken");
+const config = require("../config");
 /**
  * Funcion que crea un metodo de pago
  * @param {*} req 
@@ -8,17 +9,27 @@ const pool = require("../database");
  */
 const createPaymentMethod = async (req, res) => {
     try {
+        const token = req.headers["x-access-token"];
+        const decoded = jwt.verify(token, config.SECRET);
+        const idCustomer = decoded.idCustomer;
 
-        const { idpaymentMethod, category, bank, accountNumber, owner, securityCode, paymentStatus } = req.body;
+        const { cardNumber, owner, address, postalCode, phone,email } = req.body;
 
-        if (!idpaymentMethod || !category || !bank || !accountNumber || !owner || !securityCode || !paymentStatus) {
-            return res.status(400).json({ message: "Please. Send all data" });
+        if(!cardNumber || !owner || !address || !postalCode || !phone || !email){
+            return res.status(400).json({ message: "Please. Send all data" })
+        }
+        console.log(cardNumber, owner, address, postalCode, phone,email)
+        const resul = await pool.query('SELECT * FROM "PaymentMethod" NATURAL JOIN "CustomerPayment" WHERE "idCustomer" = $1', [idCustomer]);
+
+        if (resul.rowCount > 0) { 
+            return res.status(400).json({ message: "PaymentMethod already exist" })
         }
 
-        await pool.query(
-            'INSERT INTO "PaymentMethod" (idpaymentMethod, category, bank, accountNumber, owner, securityCode, paymentStatus) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [idpaymentMethod, category, bank, accountNumber, owner, securityCode, paymentStatus]
-        );
+        const result = await pool.query('INSERT INTO "PaymentMethod" (cardNumber, owner, address, postalCode, phone, email) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+         [cardNumber, owner, address, postalCode, phone, email]);
+
+        const CustomerPayment = await pool.query('INSERT INTO "CustomerPayment" ("idCustomer", "idPaymentMethod") VALUES ($1, $2)', 
+        [idCustomer, result.rows[0].idPaymentMethod]);
 
         res.json({ message: "PaymentMethod created" });
 
