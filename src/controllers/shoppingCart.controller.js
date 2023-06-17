@@ -6,7 +6,7 @@ const config = require('../config');
 /**
  * Funcion que crea un carrito en la base de datos
  * @param {*} req 
- * @param {*} res 
+ * @param {*} res
  * @returns 
  */
 const createShoppingCart = async (req, res) => {
@@ -56,13 +56,13 @@ const getShoppingCartByIdUser = async (req, res) => {
         }
 
         const result = await pool.query('SELECT * FROM "ShoppingCart" WHERE "idCustomer" = $1', [idCustomer]);
- 
-        if(result.rowCount === 0){
-            return res.status(404).json({message: "Cart doesn't found"})
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Cart doesn't found" })
         }
         const productsInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1', [result.rows[0].idShoppingCart]);
         result.rows[0].products = productsInCart.rows;
-        
+
         res.json(result.rows[0]);
     } catch (error) {
         console.log(error.message)
@@ -124,50 +124,37 @@ const updateShoppingCart = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const deleteProductsFromSC= async (req, res) => {
+const deleteProductsFromSC = async (req, res) => {
     try {
         const token = req.headers['x-access-token']
         const decoded = jwt.verify(token, config.SECRET);
         const idCustomer = decoded.idCustomer;
-        const { idProduct,amount } = req.body;
+        const { idProduct, amount } = req.body;
         console.log(req.body)
         console.log(idProduct)
         console.log(amount)
         if (!idProduct || !amount) {
             return res.status(404).json({ message: "Please. Send all data" })
         }
-        
-        const stock = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
-            [idProduct];
-        
+        const infoSCP = await pool.query('SELECT scp."idShoppingCartProduct", scp."amount" FROM "ShoppingCart" sc JOIN "ShoppingCartProduct" scp ON sc."idShoppingCart" = scp."idShoppingCart" JOIN "Product" p ON scp."idProduct" = p."idProduct" WHERE sc."idCustomer" = $1 AND p."idProduct" = $2',
+        [idCustomer, idProduct]);
 
-        if (stock.rowCount === 0) {
+        console.log(infoSCP.rows[0])
+        if (infoSCP.rowCount === 0) {
             return res.status(404).json({ message: "Product doesn't found" })
         }
 
-        if (stock.rows[0].stock < amount) {
-            return res.status(400).json({ message: "There is not enough stock" })
+        if (infoSCP.rows[0].amount < amount) {
+            return res.status(404).json({ message: "The amount is greater than the amount of the product in the shopping cart" })
         }
+        console.log("entra 0")
+        const result = await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = $1 WHERE "idShoppingCartProduct" = $2',
+            [infoSCP.rows[0].amount - amount, infoSCP.rows[0].idShoppingCartProduct]);
 
-
-        if(stock.rows[0].stock === amount){
-            const result = await pool.query('DELETE FROM "ShoppingCartProduct" WHERE "idProduct" = $1 AND "idCustomer" = $2',
-            [idProduct, idCustomer]);
-            console.log(result)
-            res.json("the product has been deleted")
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Product doesn't found" })
         }
-
-        if(stock.rows[0].stock > amount){
-            const idShoppingCartProduct = await pool.query('SELECT scp.idShoppingCartProduct FROM shoppingcart sc JOIN shoppingcartproduct scp ON sc.idShoppingCart = scp.idShoppingCart JOIN product p ON scp.idProduct = p.idProduct WHERE sc.idCustomer = $1 AND p.idProduct = $2'
-            [idCustomer, idProduct]);
-
-
-            const result = await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = "amount" - $1 WHERE "idProduct" = $2 AND "shoppingCartProduct" = $3',
-            [amount, idProduct, idShoppingCartProduct]);
-            console.log(result)
-            res.json("the product has been updated")
-        }   
-
+        res.json("the product has been updated")
 
     } catch (error) {
         console.log(error.message)
@@ -194,7 +181,7 @@ const subTotal = async (req, res) => {
 const getAllShoppingCartProducts = async (req, res) => {
     try {
 
-        
+
         if (!req.headers['x-access-token']) {
             return res.status(400).json({ message: "signing again" })
         }
@@ -207,7 +194,7 @@ const getAllShoppingCartProducts = async (req, res) => {
         }
         res.json(result.rows);
         console.log(result.rows)
-    }catch (error){
+    } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error getAllShoppingCartProducts" })
     }
@@ -215,4 +202,4 @@ const getAllShoppingCartProducts = async (req, res) => {
 }
 
 
-module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteProductsFromSC,getAllShoppingCartProducts }
+module.exports = { createShoppingCart, getShoppingCartByIdUser, getShoppingCart, updateShoppingCart, deleteProductsFromSC, getAllShoppingCartProducts }
