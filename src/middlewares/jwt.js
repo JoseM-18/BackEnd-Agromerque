@@ -1,22 +1,23 @@
-const { Pool } = require('pg');
+const pool = require('../database');
 const jwt = require('jsonwebtoken');
-const config = require('./config'); // Archivo de configuración con la clave secreta
+const config = require('../config'); // Archivo de configuración con la clave secreta
 
-const pool = new Pool({
-    connectionString: process.env.PG_CONNECTION_STRING,
-});
 
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
+    console.log(token);
+    console.log(config.SECRET);
+    
     if (!token) return res.status(403).send({ message: 'No token provided!' });
     const decoded = jwt.verify(token, config.SECRET);
-    req.userId = decoded.id;
+    
+    req.username = decoded.username;
 
     const client = await pool.connect();
     try {
-      const query = 'SELECT * FROM users WHERE id = $1';
-      const values = [req.userId];
+      const query = 'SELECT * FROM "User" WHERE "username" = $1';
+      const values = [req.username];
       const result = await client.query(query, values);
 
       if (result.rowCount === 0) {
@@ -28,7 +29,8 @@ const verifyToken = async (req, res, next) => {
       client.release();
     }
   } catch (error) {
-    return res.status(401).send({ message: 'Unauthorized! Please signIn' });
+    console.error(error);
+    return res.status(401).send({ message: 'Unauthorized!' });
   }
 };
  

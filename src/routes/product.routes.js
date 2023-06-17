@@ -2,17 +2,29 @@ const {Router} = require('express');
 
 const router = Router();
 
-const { getProduct, getProductById, createProduct, updateProduct, deleteProduct, getProductByName } = require('../controllers/product.controller')
+const {jsonwt,verifySignUp} = require('../middlewares')
+
+const { 
+    getProduct, 
+    getProductById, 
+    getProductByCategory,
+    createProduct, 
+    updateProduct, 
+    deleteProduct, 
+    getProductByName 
+} = require('../controllers/product.controller')
 
 router.get('/product', getProduct)
 
-router.get('/product/:idProduct', getProductById)
+router.get('/product/:idProduct', [jsonwt.verifyToken], getProductById)
 
-router.get('/product/:name', getProductByName)
+router.get('/product/name/:name', getProductByName)
 
-router.post('/product', createProduct)
+router.get('/product/category/:category', getProductByCategory)
 
-router.delete('/product/:idProduct', deleteProduct)
+router.post('/product', [jsonwt.verifyToken,jsonwt.isAdmin], createProduct)
+
+router.delete('/product/:idProduct',deleteProduct)
 
 router.put('/product/:idProduct', updateProduct)
 

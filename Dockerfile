@@ -14,6 +14,8 @@ RUN npm install -g bcryptjs
 
 RUN npm install -g dotenv
 
+RUN npm install -g cors
+
 COPY . .
 
 CMD ["npm", "run", "dev"]
