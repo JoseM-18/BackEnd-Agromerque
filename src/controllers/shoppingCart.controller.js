@@ -22,7 +22,6 @@ const createShoppingCart = async (req, res) => {
             return res.status(400).json({ message: "Please. Send all data" })
         }
         const result = await pool.query('INSERT INTO "ShoppingCart" ("idCustomer","creationDate") VALUES ($1,$2)', [idCustomer, formattedDate]);
-        console.log(result)
         res.json("cart created")
 
     } catch (error) {
@@ -111,7 +110,6 @@ const updateShoppingCart = async (req, res) => {
             return res.status(404).json({ message: "Cart doesn't found" })
         }
 
-        console.log(result)
         res.json("the cart " + idShoppingCart + " has been updated")
     } catch (error) {
         console.log(error.message)
@@ -130,16 +128,12 @@ const deleteProductsFromSC = async (req, res) => {
         const decoded = jwt.verify(token, config.SECRET);
         const idCustomer = decoded.idCustomer;
         const { idProduct, amount } = req.body;
-        console.log(req.body)
-        console.log(idProduct)
-        console.log(amount)
         if (!idProduct || !amount) {
             return res.status(404).json({ message: "Please. Send all data" })
         }
         const infoSCP = await pool.query('SELECT scp."idShoppingCartProduct", scp."amount" FROM "ShoppingCart" sc JOIN "ShoppingCartProduct" scp ON sc."idShoppingCart" = scp."idShoppingCart" JOIN "Product" p ON scp."idProduct" = p."idProduct" WHERE sc."idCustomer" = $1 AND p."idProduct" = $2',
         [idCustomer, idProduct]);
 
-        console.log(infoSCP.rows[0])
         if (infoSCP.rowCount === 0) {
             return res.status(404).json({ message: "Product doesn't found" })
         }
@@ -147,7 +141,17 @@ const deleteProductsFromSC = async (req, res) => {
         if (infoSCP.rows[0].amount < amount) {
             return res.status(404).json({ message: "The amount is greater than the amount of the product in the shopping cart" })
         }
-        console.log("entra 0")
+
+        if(infoSCP.rows[0].amount === amount){
+            const result = await pool.query('DELETE FROM "ShoppingCartProduct" WHERE "idShoppingCartProduct" = $1',
+            [infoSCP.rows[0].idShoppingCartProduct]);
+            if (result.rowCount === 0) {
+                return res.status(404).json({ message: "Product doesn't found" })
+            }
+            return res.json("the product has been deleted")
+        }
+
+
         const result = await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = $1 WHERE "idShoppingCartProduct" = $2',
             [infoSCP.rows[0].amount - amount, infoSCP.rows[0].idShoppingCartProduct]);
 
@@ -166,7 +170,6 @@ const subTotal = async (req, res) => {
         const { idShoppingCart } = req.params;
         const result = await pool.query('SELECT SUM("price" * "quantity") AS "subTotal" FROM "ShoppingCartProduct" NATURAL JOIN "Product" WHERE "idShoppingCart" = $1',
             [idShoppingCart]);
-        console.log(result)
         if (result.rowCount === 0) {
             return res.status(404).json({ message: "Cart doesn't found" })
 
@@ -193,7 +196,6 @@ const getAllShoppingCartProducts = async (req, res) => {
             return res.status(404).json({ message: "Cart doesn't found" })
         }
         res.json(result.rows);
-        console.log(result.rows)
     } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error getAllShoppingCartProducts" })

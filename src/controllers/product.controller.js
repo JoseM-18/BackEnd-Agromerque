@@ -25,8 +25,6 @@ const getProductById = async (req, res) => {
   try {
     const { idProduct } = req.params;
     const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail" WHERE "idProduct" = $1', [idProduct]);
-    console.log(result)
-
     if (result.rows.length === 0) {
       return res.status(404).json(
         { message: "Product doesn't found" }
@@ -47,7 +45,6 @@ const getProductById = async (req, res) => {
 const getProductByName = async (req, res) => {
   const { name } = req.params;
   const nameFormat = format(name);
-  console.log(name)
   const productExists = await pool.query('SELECT * FROM "Product" WHERE "name" LIKE $1', [`%${nameFormat}%`]);
 
   const result = await pool.query('SELECT * FROM "Product" NATURAL JOIN "ProductDetail" WHERE "name" LIKE $1', [`%${nameFormat}%`]);
@@ -58,7 +55,6 @@ const getProductByName = async (req, res) => {
   }
  
   res.json(result.rows);
-  console.log(result)
 }
 
 const getProductByCategory = async (req, res) => {
@@ -71,7 +67,6 @@ const getProductByCategory = async (req, res) => {
       { message: "Product doesn't found" }
     )
   }
-  console.log(result)
   res.json(result.rows);
 }
 
@@ -95,7 +90,6 @@ const createProduct = async (req, res) => {
     }
 
     if (!verificarProducto(req)) {
-      console.log("error en los datos")
       return res.status(400).json({ message: "Please. Send all data" })
 
     }
@@ -112,15 +106,12 @@ const createProduct = async (req, res) => {
 
     // Insertar el detalle del producto en la tabla ProductDetail
     const idDetail = await insertInDetailProduct(req);
-    console.log(idDetail);
 
     // Insertar el producto en la tabla Product
     const productResult = await insertInProduct(req, idDetail);
-    console.log(productResult);
 
     // Insertar el producto en la tabla ProductCategory
     const productCategory = await insertInProductCategory(idProduct, category);
-    console.log(productCategory);
 
     res.json({ message: "Product created successfully" });
   } catch (error) {
@@ -158,7 +149,6 @@ const updateProduct = async (req, res) => {
 
   const updateProductDetail = await updateInProductDetail(req, idProduct);
 
-  console.log(updateProductDetail)
   res.json({ message: "Product updated successfully" });
 }
 
@@ -291,7 +281,6 @@ const insertInProductCategory = async (idProduct, idCategory) => {
  */
 const updateInProduct = async (req, idProduct) => {
   const { name, purchasePrice, salePrice, stock } = req.body;
-  console.log(idProduct)
   const isIdInDB = await pool.query('SELECT * FROM "Product" WHERE "idProduct" = $1', [idProduct]);
   if (isIdInDB.rows.length === 0) {
     return "El producto no esta registrado"
@@ -343,7 +332,6 @@ const format = (string) => {
   }catch(error){
       console.log(error.message)
 
-      
   }
 }
 

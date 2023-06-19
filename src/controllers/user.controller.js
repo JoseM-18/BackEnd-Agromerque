@@ -12,7 +12,6 @@ const customer = require('../controllers/customer.controller');
 const signUp = async (req, res) => {
     try {
         //variables para crear un usuario en la base de datos, encriptar la contraseña y obtener la fecha actual
-        console.log(req.body)
         let result = null;
         const { username, password, email, name, lastname, phone, address, birthdate} = req.body;
         let role = req.body.role;
@@ -27,7 +26,6 @@ const signUp = async (req, res) => {
 
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
         
-        console.log(role)
         //si el rol no existe reemplazelo por customer
         if (role === null || role === undefined || role === "") { 
             role = 'Customer';
@@ -54,7 +52,6 @@ const signUp = async (req, res) => {
                 }
                 //si no es admin, entonces es un cliente y se crea en la base de datos, tanto en la tabla User como en la tabla Customer
                 const result = await customer.createCustomer(idUser,name,lastname,address, birthdate, phone);
-                console.log(result)
                 if(result !== "Customer " + name + " created"){
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
@@ -93,7 +90,6 @@ const signIn = async (req, res) => {
             return res.status(400).json({ message: "Please. Send all data" })
         }
         const result = await pool.query('SELECT * FROM "User"  WHERE "username" = $1', [username]);
-        console.log(result.rows)
         if (result.rows.length === 0) {
             return res.status(404).json(
                 { message: "invalid access, verify your username" }
@@ -157,7 +153,6 @@ const getUser = async (req, res) => {
             info = await pool.query('SELECT * FROM "User" NATURAL JOIN "Customer";')
         }
 
-        console.log(info)
         res.json(info.rows)
 
     } catch (error) {
@@ -178,7 +173,6 @@ const getUserById = async (req, res) => {
 
         const id = req.params.idUser;
         const result = await pool.query('SELECT * FROM "User" WHERE "idUser" = $1', [id]);
-        console.log(result)
         if (result.rows.length === 0) {
             return res.status(404).json(
                 { message: "User doesn't found" }
@@ -211,7 +205,6 @@ const updateUser = async (req, res) => {
             role,
             id
         ]);
-        console.log(result)
         return res.json({ message: "User Updated" })
 
     } catch (error) {
@@ -230,7 +223,6 @@ const deleteUser = async (req, res) => {
 
         const id = req.params.idUser;
         const result = await pool.query('DELETE FROM "User" WHERE "idUser" = $1', [id]);
-        console.log(result)
         res.json({ message: "User deleted" })
     } catch (error) {
         console.log(error.message)

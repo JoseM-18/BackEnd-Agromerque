@@ -132,7 +132,6 @@ const deleteCategory = async (req, res) => {
     try {
         const { idCategory } = req.params;
         const result = await pool.query('DELETE FROM "Category" WHERE "idCategory" = $1', [idCategory]);
-        console.log(result)
 
         if (result.rowCount === 0) {
             return res.status(404).json({ message: "Category doesn't found" })

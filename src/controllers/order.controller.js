@@ -65,7 +65,6 @@ const createOrder = async (req, res) => {
 
         const result = await pool.query('INSERT INTO "Order" ("idCustomer","idPaymentMethod","idShoppingCart","date", "orderTotal") VALUES ($1, $2, $3, $4, $5)', 
         [idCustomer, idPaymentMethod, idShoppingCart,date, orderTotal]);
-        console.log(result)
         res.json("creating a order")
 
     } catch (error) {
@@ -98,7 +97,6 @@ const updateOrder = async (req, res) => {
             'UPDATE "Order" SET "" = $1, "idPaymentMethod" = $2, "date" = $3, "orderTotal" = $4 WHERE "idOrder" = $5',
             [idPaymentMethod, date, orderTotal, idOrder]
         );
-        console.log(result)
         res.json(`Order updated successfully`)
     } catch (error) {
         console.log(error.message)

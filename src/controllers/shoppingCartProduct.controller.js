@@ -12,11 +12,14 @@ const createShoppingCartProduct = async (req, res) => {
     try {
         const token = req.headers['x-access-token'];
 
-
         if (!token) return res.status(401).json({ message: "No token provided" });
 
         const decoded = jwt.verify(token, config.SECRET);
         const idCustomer = decoded.idCustomer;
+
+        if(!idCustomer){
+            return res.status(400).json({ message: "you are admin, you can not buy products" })
+        }
 
         if (!idCustomer) {
             return res.status(400).json({ message: "Please. Send all data" })
@@ -49,14 +52,15 @@ const createShoppingCartProduct = async (req, res) => {
             const currentAmount = parseInt(isInCart.rows[0].amount, 10);
             const newAmount = currentAmount + parseInt(amount, 10);
             await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = $1 WHERE "idShoppingCart" = $2 AND "idProduct" = $3', [newAmount, idShoppingCart, idProduct]);
-            console.log("entra a actualizar la cantidad")
+            return res.json("the product was added to the cart and the stock was updated")
             /*
             const newStock = avaiableStock.rows[0].stock - amount;
             await pool.query('UPDATE "Product" SET "stock" = $1 WHERE "idProduct" = $2', [newStock, idProduct]);
             return res.json("the product was added to the cart ")*/
         } else {
             await pool.query('INSERT INTO "ShoppingCartProduct" ("idShoppingCart", "idProduct", "amount") VALUES ($1, $2, $3)', [idShoppingCart, idProduct, amount]);
-            console.log("entra a insertar")
+            
+            return res.json("the product was added to the cart ")
 
         }
     } catch (error) {

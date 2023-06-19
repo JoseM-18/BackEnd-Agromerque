@@ -1,6 +1,7 @@
 const pool = require("../database");
 const jwt = require("jsonwebtoken");
 const config = require("../config");
+
 /**
  * Funcion que crea un metodo de pago
  * @param {*} req 
@@ -18,18 +19,20 @@ const createPaymentMethod = async (req, res) => {
         if(!cardNumber || !owner || !address || !postalCode || !phone || !email){
             return res.status(400).json({ message: "Please. Send all data" })
         }
-        console.log(cardNumber, owner, address, postalCode, phone,email)
         const resul = await pool.query('SELECT * FROM "PaymentMethod" NATURAL JOIN "CustomerPayment" WHERE "idCustomer" = $1', [idCustomer]);
-
         if (resul.rowCount > 0) { 
             return res.status(400).json({ message: "PaymentMethod already exist" })
         }
 
-        const result = await pool.query('INSERT INTO "PaymentMethod" (cardNumber, owner, address, postalCode, phone, email) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        const result = await pool.query('INSERT INTO "PaymentMethod" ("cardNumber", "owner", "address", "postalCode", "phone", "email") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
          [cardNumber, owner, address, postalCode, phone, email]);
 
-        const CustomerPayment = await pool.query('INSERT INTO "CustomerPayment" ("idCustomer", "idPaymentMethod") VALUES ($1, $2)', 
-        [idCustomer, result.rows[0].idPaymentMethod]);
+        const currentDate = new Date();
+        const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+ 
+
+        const CustomerPayment = await pool.query('INSERT INTO "CustomerPayment" ("idCustomer", "idPaymentMethod","date") VALUES ($1, $2, $3)', 
+        [idCustomer, result.rows[0].idPaymentMethod,formattedDate]);
 
         res.json({ message: "PaymentMethod created" });
 
