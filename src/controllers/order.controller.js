@@ -48,7 +48,12 @@ const getOrderById = async (req, res) => {
 const createOrder = async (req, res) => {
     try {
 
-        const { idCustomer,idPaymentMethod,idShoppingCart, date, orderTotal} = req.body;
+        const token = req.headers["x-access-token"];
+        const decoded = jwt.verify(token, config.SECRET);
+        const idCustomer = decoded.idCustomer;
+        const { idPaymentMethod,idShoppingCart, date, orderTotal} = req.body;
+
+
         if (!idCustomer || !idPaymentMethod || !date || !orderTotal) {
             return res.status(400).json({ message: "Please. Send all data" })
         }

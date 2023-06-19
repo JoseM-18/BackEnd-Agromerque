@@ -14,18 +14,18 @@ const createPaymentMethod = async (req, res) => {
         const decoded = jwt.verify(token, config.SECRET);
         const idCustomer = decoded.idCustomer;
 
-        const { cardNumber, owner, address, postalCode, phone,email } = req.body;
+        const { cardNumber, owner, address, postalCode, phone,email,target } = req.body;
 
-        if(!cardNumber || !owner || !address || !postalCode || !phone || !email){
+        if(!cardNumber || !owner || !address || !postalCode || !phone || !email || !target ){
             return res.status(400).json({ message: "Please. Send all data" })
         }
-        const resul = await pool.query('SELECT * FROM "PaymentMethod" NATURAL JOIN "CustomerPayment" WHERE "idCustomer" = $1', [idCustomer]);
+        const resul = await pool.query('SELECT * FROM "PaymentMethod" NATURAL JOIN "CustomerPayment" WHERE "idCustomer" = $1 AND "cardNumber" =$2', [idCustomer, cardNumber]);
         if (resul.rowCount > 0) { 
             return res.status(400).json({ message: "PaymentMethod already exist" })
         }
 
-        const result = await pool.query('INSERT INTO "PaymentMethod" ("cardNumber", "owner", "address", "postalCode", "phone", "email") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-         [cardNumber, owner, address, postalCode, phone, email]);
+        const result = await pool.query('INSERT INTO "PaymentMethod" ("cardNumber", "owner", "address", "postalCode", "phone", "email", "target") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+         [cardNumber, owner, address, postalCode, phone, email,target]);
 
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
@@ -48,9 +48,17 @@ const createPaymentMethod = async (req, res) => {
  * @param {*} res  
  */
 const getPaymentMethod = async (req, res) => {
+    const token = req.headers["x-access-token"];
+    const decoded = jwt.verify(token, config.SECRET);
+    const idCustomer = decoded.idCustomer;
+
     try {
-        const result = await pool.query('SELECT * FROM "PaymentMethod"');
+        const result = await pool.query('SELECT * FROM "PaymentMethod" NATURAL JOIN "CustomerPayment" WHERE "idCustomer" = $1', [idCustomer]);
+        if(result.rows.length === 0){
+            return res.status(404).json({ message: "you don't have payment methods" })
+        }
         res.json(result.rows);
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal server error getPaymentMethod" });
