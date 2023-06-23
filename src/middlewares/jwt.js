@@ -6,8 +6,6 @@ const config = require('../config'); // Archivo de configuración con la clave s
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers['x-access-token'];
-    console.log(token);
-    console.log(config.SECRET);
     
     if (!token) return res.status(403).send({ message: 'No token provided!' });
     const decoded = jwt.verify(token, config.SECRET);

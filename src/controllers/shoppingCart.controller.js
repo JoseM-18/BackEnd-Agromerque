@@ -62,6 +62,10 @@ const getShoppingCartByIdUser = async (req, res) => {
         const productsInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1', [result.rows[0].idShoppingCart]);
         result.rows[0].products = productsInCart.rows;
 
+        if(result.rows[0].products.length === 0){
+            return res.status(404).json({ message: "shopping cart is empty" })
+        }
+
         res.json(result.rows[0]);
     } catch (error) {
         console.log(error.message)

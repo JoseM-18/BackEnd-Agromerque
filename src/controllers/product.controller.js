@@ -10,7 +10,6 @@ const getProduct = async (req, res) => {
 
   const result = await pool.query('SELECT p."idProduct",pd."idDetail",p."name" AS name,p."purchasePrice",p."salePrice",p."stock",pd."color",pd."size",pd."weight",pd."description",pd."image",pd."harvestDate", c."nameCategory" AS categoryName FROM "Product" AS p INNER JOIN "ProductDetail" AS pd ON p."idDetail" = pd."idDetail" INNER JOIN "categoryAssignment" AS ca ON p."idProduct" = ca."idProduct" INNER JOIN "Category" AS c ON ca."idCategory" = c."idCategory";');
 
-  //
 
   res.json(result.rows)
 }
