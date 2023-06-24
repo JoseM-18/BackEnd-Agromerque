@@ -57,12 +57,14 @@ const getShoppingCartByIdUser = async (req, res) => {
         const result = await pool.query('SELECT * FROM "ShoppingCart" WHERE "idCustomer" = $1', [idCustomer]);
 
         if (result.rowCount === 0) {
+            console.log("no hay carrito")
             return res.status(404).json({ message: "Cart doesn't found" })
         }
         const productsInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1', [result.rows[0].idShoppingCart]);
         result.rows[0].products = productsInCart.rows;
 
         if(result.rows[0].products.length === 0){
+            console.log("no hay productos en el carrito")
             return res.status(404).json({ message: "shopping cart is empty" })
         }
 
@@ -163,7 +165,6 @@ const deleteProductsFromSC = async (req, res) => {
             return res.status(404).json({ message: "Product doesn't found" })
         }
         res.json("the product has been updated")
-
     } catch (error) {
         console.log(error.message)
     }

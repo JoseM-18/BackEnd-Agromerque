@@ -138,10 +138,22 @@ const createOrder = async (req, res) => {
       };
     });
 
+    const infoCustomerQuery = `
+      SELECT "name", "lastname", "email"
+      FROM "Customer" NATURAL JOIN "User"
+      WHERE "idCustomer" = $1
+    `;
+    const infoCustomerResult = await pool.query(infoCustomerQuery, [idCustomer]);
+    console.log(infoCustomerResult.rows[0]);
+
+
     const orderData = {
       message: "Order created successfully",
       idOrder,
       idCustomer,
+      nameCustomer: infoCustomerResult.rows[0].name,
+      lastNameCustomer: infoCustomerResult.rows[0].lastname,
+      emailCustomer: infoCustomerResult.rows[0].email,
       idPaymentMethod,
       date,
       orderTotal: total,
