@@ -133,23 +133,28 @@ const createProduct = async (req, res) => {
 */
 const updateProduct = async (req, res) => {
 
-  if (req.params.idProduct === undefined) {
-    return res.status(400).json({ message: "Please. Send id product" })
-  }
-  const { idProduct } = req.params;
+  try{
 
-  if (!verificarActualizarProducto(req)) {
-    return res.status(400).json({ message: "Please. Send all data" })
-  }
+    if (req.params.idProduct === undefined) {
+      return res.status(400).json({ message: "Please. Send id product" })
+    }
+    const { idProduct } = req.params;
+    console.log(idProduct)
+    const updateProduct = await updateInProduct(req, idProduct);
+    console.log(updateProduct)
+    if(updateProduct.rowCount === 0){
 
-  const updateProduct = await updateInProduct(req, idProduct);
-  if (updateProduct !== "ok") {
-    return res.status(400).json({ message: updateProduct })
-  }
-
-  const updateProductDetail = await updateInProductDetail(req, idProduct);
-
-  res.json({ message: "Product updated successfully" });
+      return res.status(400).json({ message: "Product doesn't exists" })
+    }
+    const updateProductDetail = await updateInProductDetail(req, idProduct);
+    if(updateProductDetail.rowCount === 0){
+      return res.status(400).json({ message: "Product doesn't exists" })
+    }
+    res.json({ message: "Product updated successfully" });
+  }catch  (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error updateProduct" });
+  } 
 }
 
 /**
@@ -159,6 +164,7 @@ const updateProduct = async (req, res) => {
  * @returns
  */
 const deleteProduct = async (req, res) => {
+  
   const idProduct = req.params.idProduct;
 
   try {
@@ -175,18 +181,11 @@ const deleteProduct = async (req, res) => {
 
     const idDetail = detailResult.rows[0].idDetail;
 
-    // Eliminar el producto de la tabla "Product" (incluye el idDetail relacionado)
     const productDeleteResult = await pool.query(
-      'DELETE FROM "Product" WHERE "idProduct" = $1',
-      [idProduct]
-    );
-
-    // Eliminar el detalle del producto de la tabla "ProductDetail"
-    const detailDeleteResult = await pool.query(
       'DELETE FROM "ProductDetail" WHERE "idDetail" = $1',
       [idDetail]
     );
-
+    
     if(productDeleteResult.rowCount === 0 || detailDeleteResult.rowCount === 0){
       return res.json({ message: "Product doesn't found" });
     }
@@ -302,17 +301,15 @@ const updateInProduct = async (req, idProduct) => {
  * @returns 
  */
 const updateInProductDetail = async (req, idProduct) => {
-  const { color, size, weight, description, image, harvestDate } = req.body;
-  await pool.query('UPDATE "ProductDetail" SET "color" = $1, "size" = $2, "weight" = $3, "description" = $4, "image " = $5, "harvestDate" = $6 WHERE "idDetail" = $7', [
-    color,
-    size,
+  const { weight, description, image, harvestDate } = req.body;
+  const resul = await pool.query('UPDATE "ProductDetail" SET "weight" = $1, "description" = $2, "image" = $3, "harvestDate" = $4 WHERE "idDetail" = $5', [
     weight,
     description,
     image,
     harvestDate,
     idProduct
   ]);
-  return "ok";
+  return resul;
 }
 
 //----------------------------------------------------funciones que no se exportan pero se usan en las principales---------------------------------------------------------//
