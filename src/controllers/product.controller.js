@@ -8,8 +8,15 @@ const pool = require('../database');
  */
 const getProduct = async (req, res) => {
 
-  const result = await pool.query('SELECT p."idProduct",pd."idDetail",p."name" AS name,p."purchasePrice",p."salePrice",p."stock",pd."color",pd."size",pd."weight",pd."description",pd."image",pd."harvestDate", c."nameCategory" AS categoryName FROM "Product" AS p INNER JOIN "ProductDetail" AS pd ON p."idDetail" = pd."idDetail" INNER JOIN "categoryAssignment" AS ca ON p."idProduct" = ca."idProduct" INNER JOIN "Category" AS c ON ca."idCategory" = c."idCategory";');
+  const isActive = await pool.query('SELECT * FROM "Product" WHERE "active" = true');
 
+  if (isActive.rowCount === 0) {
+    return res.status(404).json(
+      { message: "Product doesn't found" }
+    )
+
+  }
+  const result = await pool.query('SELECT p."idProduct",pd."idDetail",p."name" AS name,p."purchasePrice",p."salePrice",p."stock",pd."color",pd."size",pd."weight",pd."description",pd."image",pd."harvestDate", c."nameCategory" AS categoryName FROM "Product" AS p INNER JOIN "ProductDetail" AS pd ON p."idDetail" = pd."idDetail" INNER JOIN "categoryAssignment" AS ca ON p."idProduct" = ca."idProduct" INNER JOIN "Category" AS c ON ca."idCategory" = c."idCategory" WHERE p."active" = true;');
 
   res.json(result.rows)
 }
@@ -139,9 +146,7 @@ const updateProduct = async (req, res) => {
       return res.status(400).json({ message: "Please. Send id product" })
     }
     const { idProduct } = req.params;
-    console.log(idProduct)
     const updateProduct = await updateInProduct(req, idProduct);
-    console.log(updateProduct)
     if(updateProduct.rowCount === 0){
 
       return res.status(400).json({ message: "Product doesn't exists" })
@@ -170,25 +175,13 @@ const deleteProduct = async (req, res) => {
   try {
 
     // Obtener el idDetail correspondiente al producto
-    const detailResult = await pool.query(
-      'SELECT "idDetail" FROM "Product" WHERE "idProduct" = $1',
-      [idProduct]
-    );
+    const product = await pool.query('SELECT * FROM "Product" WHERE "idProduct" = $1', [idProduct]);
 
-    if (detailResult.rowCount === 0) {
-      return res.json({ message: "Product doesn't found" });
+    if (product.rows.length === 0) {
+      return res.status(404).json({ message: "Product doesn't exists" })
     }
 
-    const idDetail = detailResult.rows[0].idDetail;
-
-    const productDeleteResult = await pool.query(
-      'DELETE FROM "ProductDetail" WHERE "idDetail" = $1',
-      [idDetail]
-    );
-    
-    if(productDeleteResult.rowCount === 0 || detailDeleteResult.rowCount === 0){
-      return res.json({ message: "Product doesn't found" });
-    }
+    const deactivate = await pool.query('UPDATE "Product" SET "active" = false WHERE "idProduct" = $1', [idProduct]);
 
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
@@ -251,9 +244,10 @@ const insertInDetailProduct = async (req) => {
 const insertInProduct = async (req, idDetail) => {
   const { idProduct, name, purchasePrice, salePrice, stock } = req.body;
   const nameFormat = format(name);
+  const active = true;
   await pool.query(
-    'INSERT INTO "Product" ("idProduct", "idDetail", "name",  "purchasePrice", "salePrice", "stock") VALUES ($1, $2, $3, $4, $5, $6)',
-    [idProduct, idDetail, nameFormat, purchasePrice, salePrice, stock]
+    'INSERT INTO "Product" ("idProduct", "idDetail", "name",  "purchasePrice", "salePrice", "stock","active") VALUES ($1, $2, $3, $4, $5, $6, $7)',
+    [idProduct, idDetail, nameFormat, purchasePrice, salePrice, stock, active]
   );
   return "ok";
 }
