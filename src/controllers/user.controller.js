@@ -13,21 +13,21 @@ const signUp = async (req, res) => {
     try {
         //variables para crear un usuario en la base de datos, encriptar la contraseña y obtener la fecha actual
         let result = null;
-        const { username, password, email, name, lastname, phone, address, birthdate} = req.body;
+        const { username, password, email, name, lastname, phone, address, birthdate } = req.body;
         let role = req.body.role;
         const plainPassword = password;
         const encripPassword = await bcrypt.hash(plainPassword, 10);
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
 
-        if(!username || !password || username === "" || password === ""){
+        if (!username || !password || username === "" || password === "") {
             return res.status(400).json({ message: "Please. Send all data" })
         }
 
         const isUsernameinBD = await pool.query('SELECT * FROM "User" WHERE "username" = $1', [req.body.username]);
-        
+
         //si el rol no existe reemplazelo por customer
-        if (role === null || role === undefined || role === "") { 
+        if (role === null || role === undefined || role === "") {
             role = 'Customer';
         }
 
@@ -47,24 +47,24 @@ const signUp = async (req, res) => {
             }
 
             if (roleFormat === 'Customer') {
-                if(!name || !lastname || !address || !birthdate || !phone || name === "" || lastname === "" || address === "" || birthdate === "" || phone === ""){
+                if (!name || !lastname || !address || !birthdate || !phone || name === "" || lastname === "" || address === "" || birthdate === "" || phone === "") {
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
                 //si no es admin, entonces es un cliente y se crea en la base de datos, tanto en la tabla User como en la tabla Customer
-                const result = await customer.createCustomer(idUser,name,lastname,address, birthdate, phone);
-                if(result !== "Customer " + name + " created"){
+                const result = await customer.createCustomer(idUser, name, lastname, address, birthdate, phone);
+                if (result !== "Customer " + name + " created") {
                     return res.status(400).json({ message: "Please. Send all data" })
                 }
-                if(result === "the customer is already in the database"){
+                if (result === "the customer is already in the database") {
                     return res.status(400).json({ message: "the customer is already in the database" })
                 }
-           } 
+            }
             res.json({ message: "User created" })
         } else {
             return res.status(400).json({ message: "user already exists" })
         }
 
-      
+
     } catch (error) {
         if (error.code === '23505') {
             res.status(400).json({ message: "the user is already in the database" })
@@ -96,7 +96,7 @@ const signIn = async (req, res) => {
             )
         }
 
-        
+
 
         const passwordBD = result.rows[0].password;
         const idUser = result.rows[0].idUser;
@@ -105,28 +105,28 @@ const signIn = async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, passwordBD);
         const time = '86400s';
 
-        
+
         if (!isPasswordValid) {
             return res.status(401).json(
                 { message: "Invalid Password" }
-                )
-            }
-            
-            if(role === 'Customer'){
-    
-                const idCustomerBD = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
-                const idCustomer = idCustomerBD.rows[0].idCustomer;
+            )
+        }
 
-                const token = jwt.sign({ username: usrname, idUser: idUser, idCustomer: idCustomer, role: role }, config.SECRET, {
-                    expiresIn: time // 24 hours
-                });
-                return res.json({ token });
-            }else{
-                const token = jwt.sign({ username: usrname, idUser: idUser, role: role }, config.SECRET, {
-                    expiresIn: time // 24 hours
-                });
-                return res.json({ token });
-            }
+        if (role === 'Customer') {
+
+            const idCustomerBD = await pool.query('SELECT "idCustomer" FROM "Customer" WHERE "idUser" = $1', [idUser]);
+            const idCustomer = idCustomerBD.rows[0].idCustomer;
+
+            const token = jwt.sign({ username: usrname, idUser: idUser, idCustomer: idCustomer, role: role }, config.SECRET, {
+                expiresIn: time // 24 hours
+            });
+            return res.json({ token });
+        } else {
+            const token = jwt.sign({ username: usrname, idUser: idUser, role: role }, config.SECRET, {
+                expiresIn: time // 24 hours
+            });
+            return res.json({ token });
+        }
 
     } catch (error) {
         console.error(error);
@@ -142,7 +142,7 @@ const signIn = async (req, res) => {
  */
 const getUser = async (req, res) => {
     try {
-        
+
         const result = await pool.query('SELECT * FROM "User";')
 
         let info = null;
@@ -169,6 +169,7 @@ const getUser = async (req, res) => {
  * @returns 
  */
 const getUserById = async (req, res) => {
+    console.log(req.params)
     try {
 
         const id = req.params.idUser;
@@ -179,7 +180,7 @@ const getUserById = async (req, res) => {
             )
         }
         const password = result.rows[0].password;
-        
+
 
         return res.json(result.rows[0])
     } catch (error) {
@@ -233,14 +234,24 @@ const deleteUser = async (req, res) => {
 
 //-----------------------------funciones que no se exportan pero que se usan en este archivo-----------------------------//
 const format = (string) => {
-    try{
+    try {
 
         return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
-    }catch(error){
+    } catch (error) {
         console.log(error.message)
 
-        
+
     }
 }
+/** 
+const actualizar = async (req, res ) => { 
+    try{
+        
+
+    
+     }
+    
+}
+*/
 
 module.exports = { getUser, getUserById, updateUser, deleteUser, signUp, signIn };

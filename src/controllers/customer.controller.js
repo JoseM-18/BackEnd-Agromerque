@@ -23,8 +23,13 @@ const getAllCustomers = async (req, res) => {
  */
 const getCustomerById = async (req, res) => {
     try {
-        const { idCustomer } = req.params;
-        const result = await pool.query('SELECT * FROM "Customer" WHERE "idCustomer" = $1', [idCustomer]);
+        const idUser = req.params.idCustomer;
+        console.log(idUser);
+        const result = await pool.query('SELECT name, lastname, email, phone, password, address FROM "Customer" INNER JOIN "User" ON "Customer"."idUser" = "User"."idUser" WHERE "Customer"."idUser" = $1', [idUser]);
+        /** 
+       const result = await pool.query('SELECT * FROM "Customer" WHERE "idCustomer" = $1', [idCustomer]);
+        * 
+        */
 
         if (result.rows.length === 0) {
             return res.status(404).json(
