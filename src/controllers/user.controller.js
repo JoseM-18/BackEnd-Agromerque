@@ -183,7 +183,7 @@ const getUserById = async (req, res) => {
                 { message: "Customer doesn't found" }
             )
         }
-        
+
         return res.json(result.rows[0])
     
         }else if (role === 'Admin') {
@@ -223,7 +223,6 @@ const updateUser = async (req, res) => {
 
         const passwordEncrypted = await bcrypt.hash(password, 10);
 
-
         if (role === 'Customer') {
             if (!idUser || !name || !lastname || !phone || !address || !password || !username 
                 || idUser === "" || name === "" || lastname === "" || phone === "" || address === "" || password === "" || username === ""
@@ -246,11 +245,11 @@ const updateUser = async (req, res) => {
                 [username, passwordEncrypted, idUser]
             );
 
-            if (result2.rowCount === 0) {
+            if (result2.rowCount === 0) { 
                 return res.status(404).json({ message: "Customer doesn't found" })
             }
 
-            res.json({ message: "Customer Updated" })
+            return res.json({ message: "User Updated" })
         } else if (role === 'Admin') {
             if (!idUser || !password || !username  || password === "" || username === "") {
                 return res.status(404).json({ message: "Please. Send all data" })
@@ -265,7 +264,7 @@ const updateUser = async (req, res) => {
                 return res.status(404).json({ message: "Customer doesn't found" })
             }
 
-            res.json({ message: "Customer Updated" })
+            res.json({ message: "User Updated" })
         }
 
 
@@ -304,15 +303,6 @@ const format = (string) => {
 
     }
 }
-/** 
-const actualizar = async (req, res ) => { 
-    try{
-        
 
-    
-     }
-    
-}
-*/
 
 module.exports = { getUser, getUserById, updateUser, deleteUser, signUp, signIn };
