@@ -169,23 +169,40 @@ const getUser = async (req, res) => {
  * @returns 
  */
 const getUserById = async (req, res) => {
-    console.log(req.params)
     try {
+        const idUser = req.params.idUser;
+        const token = req.headers["x-access-token"]
+        const decoded = jwt.verify(token, config.SECRET);
+        const role = decoded.role;
+        if (role === 'Customer') {
 
-        const id = req.params.idUser;
-        const result = await pool.query('SELECT * FROM "User" WHERE "idUser" = $1', [id]);
-        if (result.rows.length === 0) {
+        const result = await pool.query('SELECT * FROM "Customer" NATURAL JOIN "User" WHERE "idUser" = $1', [idUser]);
+
+        if(result.rows.length === 0){
             return res.status(404).json(
-                { message: "User doesn't found" }
+                { message: "Customer doesn't found" }
             )
         }
-        const password = result.rows[0].password;
-
-
+        
         return res.json(result.rows[0])
+    
+        }else if (role === 'Admin') {
+            const resul = await pool.query('SELECT "username" FROM "User" WHERE "idUser" = $1', [idUser]);
+            const username = resul.rows[0].username;
+            return res.json({ username: username })
+           
+        }
+
+        if (result.rows.length === 0) {
+                
+            return res.status(404).json(
+                { message: "Customer doesn't found" }
+            )
+        }
+
     } catch (error) {
         console.log(error.message)
-        return res.status(500).json({ message: "Internal server error getUserById" })
+        return res.status(500).json({ message: "Internal server error getCustomerById" });
     }
 }
 
@@ -197,20 +214,64 @@ const getUserById = async (req, res) => {
  */
 const updateUser = async (req, res) => {
     try {
+        const { idUser } = req.params;
+        const { name, lastname, phone, address, password, username } = req.body;
+        
+        const token = req.headers["x-access-token"]
+        const decoded = jwt.verify(token, config.SECRET);
+        const role = decoded.role;
 
-        const id = req.params.id;
-        const { password, registrationDate } = req.body;
-        const result = await pool.query('UPDATE "User" SET "password" = $1, "registrationDate" = $2, "role" = $3 WHERE "idUser" = $4', [
-            password,
-            registrationDate,
-            role,
-            id
-        ]);
-        return res.json({ message: "User Updated" })
+        const passwordEncrypted = await bcrypt.hash(password, 10);
+
+
+        if (role === 'Customer') {
+            if (!idUser || !name || !lastname || !phone || !address || !password || !username 
+                || idUser === "" || name === "" || lastname === "" || phone === "" || address === "" || password === "" || username === ""
+                ) {
+                return res.status(404).json({ message: "Please. Send all data" })
+            }
+            const nameFormat = format(name);
+            const lastnameFormat = format(lastname);
+            const result = await pool.query(
+                'UPDATE "Customer" SET "name" = $1, "lastname" = $2, "phone" = $3, "address" = $4 WHERE "idUser" = $5',
+                [nameFormat, lastnameFormat, phone, address, idUser]
+            );
+
+            if (result.rowCount === 0) {
+                return res.status(404).json({ message: "Customer doesn't found" })
+            }
+
+            const result2 = await pool.query(
+                'UPDATE "User" SET "username" = $1, "password" = $2 WHERE "idUser" = $3',
+                [username, passwordEncrypted, idUser]
+            );
+
+            if (result2.rowCount === 0) {
+                return res.status(404).json({ message: "Customer doesn't found" })
+            }
+
+            res.json({ message: "Customer Updated" })
+        } else if (role === 'Admin') {
+            if (!idUser || !password || !username  || password === "" || username === "") {
+                return res.status(404).json({ message: "Please. Send all data" })
+            }
+
+            const result = await pool.query(
+                'UPDATE "User" SET "username" = $1, "password" = $2 WHERE "idUser" = $3',
+                [username, passwordEncrypted, idUser]
+            );
+
+            if (result.rowCount === 0) {
+                return res.status(404).json({ message: "Customer doesn't found" })
+            }
+
+            res.json({ message: "Customer Updated" })
+        }
+
 
     } catch (error) {
         console.log(error.message)
-        return res.status(500).json({ message: "Internal server error updateUser" })
+        return res.status(500).json({ message: "Internal server error updateCustomer" })
     }
 }
 

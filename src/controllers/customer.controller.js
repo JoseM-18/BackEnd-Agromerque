@@ -1,4 +1,8 @@
 const pool = require('../database');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+
 
 /**
  * Devuelve todos los clientes
@@ -24,20 +28,39 @@ const getAllCustomers = async (req, res) => {
 const getCustomerById = async (req, res) => {
     try {
         const idUser = req.params.idCustomer;
-        console.log(idUser);
-        const result = await pool.query('SELECT name, lastname, email, phone, password, address FROM "Customer" INNER JOIN "User" ON "Customer"."idUser" = "User"."idUser" WHERE "Customer"."idUser" = $1', [idUser]);
-        /** 
-       const result = await pool.query('SELECT * FROM "Customer" WHERE "idCustomer" = $1', [idCustomer]);
-        * 
-        */
 
-        if (result.rows.length === 0) {
+        const token = req.headers["x-access-token"]
+
+        const decoded = jwt.verify(token, config.SECRET);
+
+        const role = decoded.role;
+
+        if (role === 'Customer') {
+
+        const result = await pool.query('SELECT * FROM "Customer" NATURAL JOIN "User" WHERE "idUser" = $1', [idUser]);
+
+        if(result.rows.length === 0){
             return res.status(404).json(
                 { message: "Customer doesn't found" }
             )
         }
+        
+        return res.json(result.rows[0])
+    
+        }else if (role === 'Admin') {
+            const resul = await pool.query('SELECT "username" FROM "User" WHERE "idUser" = $1', [idUser]);
+            const username = resul.rows[0].username;
+            return res.json({ username: username })
+            
 
-        res.json(result.rows[0])
+        }
+
+        if (result.rows.length === 0) {
+                
+            return res.status(404).json(
+                { message: "Customer doesn't found" }
+            )
+        }
 
     } catch (error) {
         console.log(error.message)
@@ -53,16 +76,20 @@ const getCustomerById = async (req, res) => {
  */
 const updateCustomer = async (req, res) => {
     try {
-        const { idCustomer } = req.params;
-        const { name, lastname, phone, address } = req.body;
-        if (!idCustomer || !name || !lastname || !phone || !address) {
+        const { idUser } = req.params;
+        const { name, lastname, phone, address,password,username  } = req.body;
+        if (!idCustomer || !name || !lastname || !phone || !address || !password  || !username) {
             return res.status(404).json({ message: "Please. Send all data" })
         }
         const nameFormat = format(name);
         const lastnameFormat = format(lastname);
-
+        const token = req.headers["x-access-token"]
+        const decoded = jwt.verify(token, config.SECRET);
+        const role = decoded.role;
+        
+        if (role === 'Customer') {
         const result = await pool.query(
-            'UPDATE "Customer" SET "name" = $1, "lastname" = $2, "phone" = $3, "address" = $4 WHERE "idCustomer" = $5',
+            'UPDATE "Customer" SET "name" = $1, "lastname" = $2, "phone" = $3, "address" = $4 WHERE "idUser" = $5',
             [nameFormat, lastnameFormat, phone, address, idCustomer]
         );
 
@@ -70,7 +97,31 @@ const updateCustomer = async (req, res) => {
             return res.status(404).json({ message: "Customer doesn't found" })
         }
 
+        const result2 = await pool.query(
+            'UPDATE "User" SET "username" = $1,  "password" = $2 WHERE "idUser" = $3',
+            [username, password, idUser]
+        );
+
+        if(result2.rowCount === 0){
+            return res.status(404).json({ message: "Customer doesn't found" })
+        }
+        
         res.json({ message: "Customer Updated" })
+    }else if(role === 'Admin'){
+        console.log("entro")
+        const result = await pool.query(
+            'UPDATE "User" SET "username", "password" = $2 WHERE "idUser" = $3',
+            [username, password, idUser]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Customer doesn't found" })
+        }
+        
+        res.json({ message: "Customer Updated" })
+    }
+
+
     } catch (error) {
         console.log(error.message)
         return res.status(500).json({ message: "Internal server error updateCustomer" })
