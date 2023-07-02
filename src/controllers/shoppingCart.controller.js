@@ -19,7 +19,7 @@ const createShoppingCart = async (req, res) => {
         const currentDate = new Date();
         const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
         if (!idCustomer) {
-            return res.status(400).json({ message: "Please. Send all data" })
+            return res.status(400).json({ message: "Eres administrador, no puedes comprar productos" })
         }
         const result = await pool.query('INSERT INTO "ShoppingCart" ("idCustomer","creationDate") VALUES ($1,$2)', [idCustomer, formattedDate]);
         res.json("cart created")
@@ -154,7 +154,7 @@ const deleteProductsFromSC = async (req, res) => {
             if (result.rowCount === 0) {
                 return res.status(404).json({ message: "Product doesn't found" })
             }
-            return res.json("the product has been deleted")
+            return res.json({message:"the product has been deleted"})
         }
 
 
@@ -164,25 +164,9 @@ const deleteProductsFromSC = async (req, res) => {
         if (result.rowCount === 0) {
             return res.status(404).json({ message: "Product doesn't found" })
         }
-        res.json("the product has been updated")
+        res.json({message:"product updated succesfully"})
     } catch (error) {
         console.log(error.message)
-    }
-}
-
-const subTotal = async (req, res) => {
-    try {
-        const { idShoppingCart } = req.params;
-        const result = await pool.query('SELECT SUM("price" * "quantity") AS "subTotal" FROM "ShoppingCartProduct" NATURAL JOIN "Product" WHERE "idShoppingCart" = $1',
-            [idShoppingCart]);
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Cart doesn't found" })
-
-        }
-        res.json(result.rows[0])
-    } catch (error) {
-        console.log(error.message)
-        return res.status(500).json({ message: "Internal server error subTotal" })
     }
 }
 

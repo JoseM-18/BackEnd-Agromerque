@@ -21,11 +21,6 @@ const createShoppingCartProduct = async (req, res) => {
             return res.status(400).json({ message: "you are admin, you can not buy products" })
         }
 
-        if (!idCustomer) {
-            return res.status(400).json({ message: "Please. Send all data" })
-        }
-
-
 
         const idShoppingCartBd = await pool.query('SELECT "idShoppingCart" FROM "ShoppingCart" WHERE "idCustomer" = $1', [idCustomer]);
 
@@ -52,15 +47,12 @@ const createShoppingCartProduct = async (req, res) => {
             const currentAmount = parseInt(isInCart.rows[0].amount, 10);
             const newAmount = currentAmount + parseInt(amount, 10);
             await pool.query('UPDATE "ShoppingCartProduct" SET "amount" = $1 WHERE "idShoppingCart" = $2 AND "idProduct" = $3', [newAmount, idShoppingCart, idProduct]);
-            return res.json("the product was added to the cart and the stock was updated")
-            /*
-            const newStock = avaiableStock.rows[0].stock - amount;
-            await pool.query('UPDATE "Product" SET "stock" = $1 WHERE "idProduct" = $2', [newStock, idProduct]);
-            return res.json("the product was added to the cart ")*/
+            return res.json({message:"the product was added to the cart and the stock was updated"})
+
         } else {
             await pool.query('INSERT INTO "ShoppingCartProduct" ("idShoppingCart", "idProduct", "amount") VALUES ($1, $2, $3)', [idShoppingCart, idProduct, amount]);
             
-            return res.json("the product was added to the cart ")
+            return res.json({message:"the product was added to the cart "})
 
         }
     } catch (error) {
@@ -162,7 +154,7 @@ const updateShoppingCartProduct = async (req, res) => {
             return res.status(404).json({ message: "Cart product doesn't found" })
         }
 
-        res.json("cart " + idShoppingCartProduct + " updated succesfully")
+        res.json({message:"product updated succesfully"})
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error updateCartProduct" })

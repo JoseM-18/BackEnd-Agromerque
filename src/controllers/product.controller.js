@@ -92,7 +92,7 @@ const createProduct = async (req, res) => {
       [idProduct]
     );
 
-    if (productExists.rows.length > 0) {
+    if (productExists.rows.length > 0) { 
       return res.status(400).json({ message: "Product already exists" })
     }
 
@@ -148,7 +148,6 @@ const updateProduct = async (req, res) => {
     const { idProduct } = req.params;
     const updateProduct = await updateInProduct(req, idProduct);
     if(updateProduct.rowCount === 0){
-
       return res.status(400).json({ message: "Product doesn't exists" })
     }
     const updateProductDetail = await updateInProductDetail(req, idProduct);
@@ -272,37 +271,42 @@ const insertInProductCategory = async (idProduct, idCategory) => {
  * @param {*} idProduct
  * @returns 
  */
+let idDetail = '';
 const updateInProduct = async (req, idProduct) => {
   const { name, purchasePrice, salePrice, stock } = req.body;
   const isIdInDB = await pool.query('SELECT * FROM "Product" WHERE "idProduct" = $1', [idProduct]);
   if (isIdInDB.rows.length === 0) {
     return "El producto no esta registrado"
   }
-  await pool.query('UPDATE "Product" SET "name" = $1, "purchasePrice" = $2, "salePrice" = $3, "stock" = $4 WHERE "idProduct" = $5', [
+  await pool.query('UPDATE "Product" SET "name" = $1, "purchasePrice" = $2, "salePrice" = $3, "stock" = $4 WHERE "idProduct" = $5 RETURNING "idDetail"', [
     name,
     purchasePrice,
     salePrice,
     stock,
     idProduct
   ]);
+  idDetail = isIdInDB.rows[0].idDetail;
   return "ok";
 }
 
 /**
  * Funcion que actualiza el producto en la tabla ProductDetail
  * @param {*} req 
- * @param {*} idProduct 
+ * @param {*} idProduct
  * @returns 
  */
 const updateInProductDetail = async (req, idProduct) => {
+
+
   const { weight, description, image, harvestDate } = req.body;
   const resul = await pool.query('UPDATE "ProductDetail" SET "weight" = $1, "description" = $2, "image" = $3, "harvestDate" = $4 WHERE "idDetail" = $5', [
     weight,
     description,
     image,
     harvestDate,
-    idProduct
+    idDetail
   ]);
+  console.log(resul);
   return resul;
 }
 
