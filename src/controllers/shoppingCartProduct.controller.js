@@ -39,7 +39,7 @@ const createShoppingCartProduct = async (req, res) => {
 
         const avaiableStock = await pool.query('SELECT "stock" FROM "Product" WHERE "idProduct" = $1', [idProduct]);
         if (avaiableStock.rows[0].stock < amount) {
-            return res.status(400).json({ message: "the product is not available in the stock" })
+            return res.status(400).json({ message: "the product is not available in the stock",stock:avaiableStock.rows[0].stock })
         }
         const isInCart = await pool.query('SELECT * FROM "ShoppingCartProduct" WHERE "idShoppingCart" = $1 AND "idProduct" = $2', [idShoppingCart, idProduct]);
         if (isInCart.rows.length !== 0 ) {
